@@ -1,103 +1,673 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live-workbook | Interactive Classroom</title>
-    <!-- Tailwind CSS for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Live Workbook</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📓%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<style>
+:root{--page:#fbe8a0;--rule:#e2c76c;--margin:#e48f80;--card:#fffbe3;--ink:#2f2a1c;--mute:#6b6040;--line:#b8a768;--pencil:#3b362a;--hl:#ffd84d;--acc:#8a6100;--danger:#b3261e;--edit-bg:#c9e6ff;--edit-ink:#0f2a44;--cover:#6b4a2b;--surface:var(--card);--bg:var(--page);
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--page:#2a2412;--rule:#40381c;--margin:#8a4a40;--card:#3a331b;--ink:#f4e9bd;--mute:#c9bc88;--line:#6b5f33;--pencil:#e6d9a6;--acc:#ffd84d;--danger:#ff8a80;--edit-bg:#274763;--edit-ink:#dcefff;--cover:#4a3320;color-scheme:dark}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;font-family:'Patrick Hand','Segoe Print','Comic Sans MS',system-ui,sans-serif;font-size:1.08rem;color:var(--ink);min-height:100vh;background-color:var(--page);
+background-image:linear-gradient(90deg,transparent 3.2rem,var(--margin) 3.2rem,var(--margin) calc(3.2rem + 2px),transparent calc(3.2rem + 2px)),repeating-linear-gradient(to bottom,transparent 0,transparent 1.9rem,var(--rule) 1.9rem,var(--rule) calc(1.9rem + 1px))}
+h2{font-family:'Caveat','Patrick Hand',cursive!important;font-size:1.75rem!important;line-height:1.1!important;font-weight:700!important}
+body>header{background:var(--cover);color:#fff3b8;border-bottom:4px double #2b1c0e;box-shadow:0 3px 0 rgba(0,0,0,.2)}
+body>header span,body>header b{color:#fff3b8!important}
+body>header #netStat{border-color:#fff3b8!important}
+.brand{font-family:'Caveat',cursive;font-size:2rem;font-weight:700;line-height:1;color:#fff3b8}
+.card{background:var(--card);color:var(--ink);border:2px solid var(--pencil);border-radius:6px 16px 8px 14px;box-shadow:3px 4px 0 rgba(60,45,10,.22)}
+.btn{font:inherit;font-size:1rem;padding:.35rem .85rem;border:2px solid var(--pencil);border-radius:8px 14px 9px 13px;background:var(--card);color:var(--ink);cursor:pointer;box-shadow:2px 3px 0 rgba(60,45,10,.28);transition:transform .08s,box-shadow .08s}
+.btn:hover:not(:disabled){transform:translate(-1px,-1px);box-shadow:3px 4px 0 rgba(60,45,10,.3)}
+.btn:active:not(:disabled){transform:translate(1px,1px);box-shadow:none}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,.tog:focus-visible,.field:focus-visible,.seg button:focus-visible,#splitBar:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.btn-p{background:var(--hl);color:#2f2a1c;font-weight:700}
+.btn-d{color:var(--danger)}
+.btn-edit{background:var(--edit-bg);color:var(--edit-ink);font-weight:700}
+.tog{font:inherit;font-size:1rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;width:100%;padding:.45rem .7rem;border:2px solid var(--pencil);border-radius:8px 14px 9px 13px;background:var(--card);color:var(--ink);cursor:pointer;text-align:left;box-shadow:2px 3px 0 rgba(60,45,10,.28)}
+.tog i{width:38px;height:22px;border-radius:99px;border:2px solid var(--pencil);background:var(--card);position:relative;flex:none;transition:background .15s}
+.tog i::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--pencil);transition:transform .15s}
+.tog[aria-pressed="true"] i{background:var(--hl)}
+.tog[aria-pressed="true"] i::after{transform:translateX(16px)}
+.field{width:100%;font:inherit;padding:.45rem .7rem;border:2px solid var(--pencil);border-radius:5px 11px 6px 10px;background:var(--card);color:var(--ink)}
+textarea.field{line-height:1.9rem;padding:0 .7rem 0 2.6rem;background-attachment:local;
+background-image:linear-gradient(90deg,transparent 2rem,var(--margin) 2rem,var(--margin) calc(2rem + 2px),transparent calc(2rem + 2px)),repeating-linear-gradient(to bottom,transparent 0,transparent calc(1.9rem - 1px),var(--rule) calc(1.9rem - 1px),var(--rule) 1.9rem)}
+textarea.field[readonly]{opacity:.7;border-style:dashed}
+.field::placeholder{color:var(--mute);opacity:.8}
+.seg{display:flex;gap:2px;padding:3px;border:2px solid var(--pencil);border-radius:12px;background:var(--card)}
+.seg button{font:inherit;font-size:1rem;padding:.25rem .85rem;border:0;background:transparent;color:var(--mute);cursor:pointer;border-radius:8px}
+.seg button[aria-pressed="true"]{background:var(--hl);color:#2f2a1c;font-weight:700}
+.hl{background:var(--hl);color:#2f2a1c;border-radius:4px;padding:0 .4rem;font-weight:700;font-size:.85rem}
+.lbl{font-size:1rem;font-weight:700;color:var(--mute);margin-bottom:.3rem}
+.mode{display:inline-block;padding:.1rem .8rem;border:2px solid var(--pencil);border-radius:99px;font-weight:700;font-size:1rem}
+.mode.draft{background:var(--hl);color:#2f2a1c}
+.mode.done{background:#a5d6a7;color:#12331a}
+.timer{font-family:'Caveat',cursive;font-size:1.9rem;font-weight:700;line-height:1.2;padding:0 1rem;border:3px solid #fff3b8;border-radius:12px;color:#fff3b8;background:rgba(0,0,0,.22);min-width:6rem;text-align:center}
+.timer.low,.timer.done{background:#b3261e}
+.timer.low{animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.6}}
+.ws img{display:block;width:100%;height:auto;border-radius:6px;border:2px solid var(--pencil)}
+img.rounded{background:#fffbe0}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:var(--line)}
+.dot.on{background:#2e9e5b}
+#split{height:max(540px,calc(100vh - 6.5rem))}
+#splitBar{height:14px;flex:none;cursor:row-resize;display:flex;align-items:center;justify-content:center;touch-action:none;border-radius:6px}
+#splitBar span{width:56px;height:5px;border-radius:4px;background:var(--pencil);opacity:.5;transition:opacity .15s}
+#splitBar:hover span,#splitBar:focus-visible span,#splitBar.drag span{opacity:1}
+body.dragging{cursor:row-resize;user-select:none}
+canvas{touch-action:none;width:100%;background:#fffbe0;border:2px dashed var(--pencil);border-radius:8px;cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26'%3E%3Cpath d='M3 23l2-7L17 4l5 5L10 21z' fill='%23f2b705' stroke='%23333' stroke-width='1.6'/%3E%3C/svg%3E") 3 23,crosshair}
+</style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body>
+<header class="flex flex-wrap items-center gap-3 justify-between px-4 py-3">
+  <div class="flex items-center gap-3">
+    <span class="brand">✏️ Live Workbook</span>
+    <span class="text-sm" style="color:var(--mute)">Room <b id="roomCode" style="color:var(--ink)">—</b></span>
+    <span id="netStat" class="text-xs px-2 py-1 rounded" style="border:1px solid var(--line);color:var(--mute)">Not connected</span>
+  </div>
+  <div id="timerBox" class="timer hidden" role="timer"></div>
+  <div class="flex items-center gap-3">
+    <button class="btn" id="shareBtn">Copy room link</button>
+    <div class="seg" id="roleSeg" role="group" aria-label="Switch role">
+      <button id="roleT" aria-pressed="true">Teacher mode</button>
+      <button id="roleS" aria-pressed="false">Student mode</button>
+    </div>
+  </div>
+</header>
 
-    <!-- Header -->
-    <header class="bg-indigo-600 text-white shadow-md p-4 flex justify-between items-center">
-        <h1 class="text-xl font-bold tracking-wide">📚 Live-workbook</h1>
-        <div id="status-badge" class="text-xs bg-indigo-500 px-3 py-1 rounded-full font-medium">Connecting...</div>
-    </header>
+<!-- TEACHER -->
+<main id="teacher" class="grid gap-4 p-4 lg:grid-cols-[320px_1fr] max-w-[1400px] mx-auto">
+  <aside class="space-y-4">
+    <section class="card p-3">
+      <button class="tog" id="tOpen" aria-pressed="false"><span id="tOpenTxt">Open room to students</span><i></i></button>
+      <p id="tOpenHint" class="text-xs mt-2" style="color:var(--mute)"></p>
+    </section>
+    <section class="card p-3">
+      <div class="lbl">Timer (optional)</div>
+      <div class="flex items-center gap-2">
+        <input id="tMin" type="number" min="1" max="180" value="5" class="field" style="width:4.5rem" aria-label="Minutes">
+        <span class="text-sm">min</span>
+        <button class="btn btn-p flex-1" id="tStart">Start timer</button>
+        <button class="btn" id="tStop">Clear</button>
+      </div>
+      <p class="text-xs mt-2" style="color:var(--mute)">Everyone in the room sees the countdown at the top of the page.</p>
+    </section>
+    <section class="card p-3">
+      <div class="lbl">Pages</div>
+      <div class="flex items-center justify-between gap-2">
+        <button class="btn" id="tPrev">Previous page</button>
+        <b id="tCount" class="text-sm whitespace-nowrap">Page 1 of 1</b>
+        <button class="btn" id="tNext">Next page</button>
+      </div>
+      <div class="flex gap-2 mt-2">
+        <button class="btn btn-p flex-1" id="tAdd">+ Add page</button>
+        <button class="btn btn-d flex-1" id="tDel">Delete page</button>
+      </div>
+      <label class="lbl block mt-3" for="tFile">Upload Activity File</label>
+      <input id="tFile" type="file" accept="application/pdf,image/png,image/jpeg" class="field text-sm">
+      <p id="tUpStatus" class="text-xs mt-1" style="color:var(--mute)">PDF or PNG/JPG. A multi-page PDF fills this page and adds the rest after it.</p>
+      <div class="flex gap-2 mt-3"><button class="btn flex-1" id="tCopy">Copy page</button><button class="btn flex-1" id="tPaste">Paste page</button></div>
+      <p class="text-xs mt-1" style="color:var(--mute)">Copy puts the page on your clipboard as a picture. You can also press Ctrl+V to paste a screenshot, image or PDF as a new page.</p>
+    </section>
 
-    <!-- Main Content Area -->
-    <main class="flex-grow p-4 max-w-6xl mx-auto w-full grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        <!-- Controls & Upload Section (Teacher/Creator view) -->
-        <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4">
-            <h2 class="font-semibold text-lg text-indigo-700">Workbook Controls</h2>
-            
-            <div>
-                <label class="block text-sm font-medium text-slate-600 mb-1">Upload Worksheet (Image/PDF)</label>
-                <input type="file" id="file-upload" accept="image/*,.pdf" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
-            </div>
+    <section class="card p-3 space-y-2">
+      <div class="lbl">Class controls</div>
+      <button class="btn w-full btn-d" id="tClear">Clear all answers on this page</button>
+      <button class="tog" id="tAnon" aria-pressed="false"><span id="tAnonTxt">Show student names</span><i></i></button>
+      <button class="tog" id="tReveal" aria-pressed="false"><span>Reveal answers to students</span><i></i></button>
+    </section>
 
-            <div class="flex flex-col gap-2">
-                <button id="btn-present" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition shadow-sm">
-                    Present Current Page
-                </button>
-                <button id="btn-add-page" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-lg transition">
-                    + Add New Page
-                </button>
-            </div>
+    <section class="card p-3">
+      <div class="lbl">Students in room (<span id="tRosterN">0</span>)</div>
+      <ul id="tRoster" class="space-y-2"></ul>
+    </section>
+  </aside>
 
-            <div class="border-t pt-4 mt-auto">
-                <p class="text-xs text-slate-400">Share this link with your students. No logins required!</p>
-            </div>
-        </section>
+  <section id="split" class="min-w-0 flex flex-col">
+    <div id="paneA" class="card p-3 overflow-auto">
+      <div class="lbl">Worksheet for this page</div>
+      <div id="tWs" class="ws"></div>
+      <label class="lbl block mt-3" for="tTxt">Reading text (optional)</label>
+      <textarea id="tTxt" rows="5" class="field" placeholder="Type or paste a reading passage, dialogue or any text for students to read"></textarea>
+      <label class="lbl block mt-3" for="tIns">Questions and instructions</label>
+      <textarea id="tIns" rows="5" class="field" placeholder="Type your questions or instructions, one per line"></textarea>
+      
+    </div>
+    <div id="splitBar" role="separator" aria-orientation="horizontal" aria-label="Drag to resize activity and answers" title="Drag to resize. Double-click to reset." tabindex="0"><span></span></div>
+    <div id="paneB" class="overflow-auto flex-1 min-h-0">
+      <div class="flex items-baseline justify-between mb-2">
+        <h2 class="font-semibold">Student answers on this page</h2>
+        <span class="text-sm" id="tGridHint" style="color:var(--mute)"></span>
+      </div>
+      <div id="tGrid" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"></div>
+    </div>
+  </section>
+</main>
 
-        <!-- Interactive Board Area -->
-        <section class="md:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4">
-            <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-lg text-slate-700" id="current-view-title">Active Board</h2>
-                <span id="page-indicator" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md font-semibold">Page 1 of 1</span>
-            </div>
+<!-- STUDENT -->
+<main id="student" class="hidden p-4 max-w-3xl mx-auto space-y-4">
+  <div id="sMsg" class="hidden card p-3" style="border-color:var(--acc)"></div>
+  <div id="sWait" class="card p-6 text-center" style="color:var(--mute)"><span id="sWaitTxt">Waiting for your teacher to open this room…</span></div>
+  <div id="sBody" class="hidden space-y-4">
+    <div class="flex flex-wrap items-center gap-2" id="sTabs"></div>
+    <div id="sBack" class="hidden card p-2 px-3 text-sm flex items-center justify-between">
+      <span>You’re viewing an earlier page.</span><button class="btn" id="sBackBtn">Go to live page</button>
+    </div>
+    <div class="card p-3">
+      <div id="sWs" class="ws"></div>
+      <div id="sTxt" class="hidden mt-3 p-3 rounded-lg whitespace-pre-wrap" style="background:var(--bg)"></div>
+      <p id="sIns" class="mt-3 whitespace-pre-wrap"></p>
+    </div>
+    <div class="card p-3">
+      <div class="flex items-center justify-between gap-2 flex-wrap mb-1"><label class="lbl" style="margin:0" for="sAns">Your private answer</label><span id="sMode" class="mode draft">✏ Draft · editing</span></div>
+      <textarea id="sAns" rows="7" class="field" placeholder="Type your answer here. Only your teacher can see it."></textarea>
+      <div class="flex items-center justify-between mt-3 mb-1"><span class="lbl" style="margin:0">Optional drawing</span><button class="btn" id="sCanClear" aria-pressed="false">Eraser</button></div>
+      <canvas id="sCan" width="900" height="360"></canvas>
+      <div class="flex flex-wrap items-center gap-3 mt-4">
+        <button class="btn btn-p" id="sSubmit">✔ Submit answer</button>
+        <button class="btn btn-edit hidden" id="sEdit">✏ Edit answer/drawing</button>
+        <span id="sSubStatus" class="text-sm" style="color:var(--mute)"></span>
+      </div>
+    </div>
+    <div id="sShared" class="hidden card p-3">
+      <div class="lbl">Class answers shared by your teacher</div>
+      <div id="sSharedList" class="grid gap-3 sm:grid-cols-2"></div>
+    </div>
+  </div>
+</main>
 
-            <!-- Canvas / Worksheet Display View -->
-            <div id="board-container" class="border-2 border-dashed border-slate-200 rounded-xl min-h-[400px] flex items-center justify-center bg-slate-50 relative overflow-hidden">
-                <p class="text-slate-400 text-sm">No worksheet uploaded yet. Upload an image to begin.</p>
-            </div>
-            
-            <!-- Student Answer Submission Row -->
-            <div class="flex gap-2">
-                <input type="text" id="student-answer" placeholder="Type your answer here..." class="flex-grow border border-slate-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <button id="btn-submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-2 rounded-lg transition shadow-sm">
-                    Submit
-                </button>
-            </div>
-        </section>
+<!-- Role chooser -->
+<div id="roleModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(10,16,34,.6)">
+  <div class="card p-5 w-full max-w-sm">
+    <h2 class="text-lg font-bold mb-1">Welcome to Live Workbook</h2>
+    <p class="text-sm mb-4" style="color:var(--mute)">Who’s joining?</p>
+    <div class="grid gap-2"><button class="btn btn-p" id="pickT">I’m a teacher</button><button class="btn" id="pickS">I’m a student</button></div>
+  </div>
+</div>
 
-    </main>
+<!-- Join modal -->
+<div id="joinModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(10,16,34,.6)">
+  <div class="card p-5 w-full max-w-sm">
+    <h2 class="text-lg font-bold mb-1">Join the class</h2>
+    <p class="text-sm mb-3" style="color:var(--mute)">Enter the name your teacher will see.</p>
+    <label class="lbl block" for="joinRoom">Room code</label>
+    <input id="joinRoom" class="field mb-3" maxlength="40" autocomplete="off" style="text-transform:uppercase">
+    <label class="lbl block" for="joinName">Display name</label>
+    <input id="joinName" class="field mb-3" maxlength="30" autocomplete="nickname">
+    <button class="btn btn-p w-full" id="joinBtn">Join class</button>
+  </div>
+</div>
 
-    <!-- Footer -->
-    <footer class="text-center py-4 text-xs text-slate-400 border-t bg-white">
-        Live-workbook • Instant interactive classroom learning
-    </footer>
+<!-- Teacher login -->
+<div id="tlModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(10,16,34,.6)">
+  <div class="card p-5 w-full max-w-sm">
+    <h2 class="mb-1">Welcome, teacher</h2>
+    <p class="text-sm mb-3" style="color:var(--mute)">Just your name. No account or password.</p>
+    <label class="lbl block" for="tlName">Your name</label>
+    <input id="tlName" class="field mb-3" maxlength="30" autocomplete="name">
+    <p id="tlErr" class="text-sm mb-2" style="color:var(--danger)"></p>
+    <div class="grid gap-2">
+      <button class="btn btn-p hidden" id="tlCont">Continue my room <b id="tlContCode"></b></button>
+      <button class="btn" id="tlNew">Start a new room</button>
+      <button class="btn" id="tlBack">Back</button>
+    </div>
+  </div>
+</div>
 
-    <!-- App Logic Script -->
-    <script>
-        // Replace with your actual Supabase project credentials when setting up
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
-        
-        let supabaseClient = null;
-        try {
-            if (SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                document.getElementById('status-badge').innerText = 'Connected';
-                document.getElementById('status-badge').className = 'text-xs bg-emerald-500 text-white px-3 py-1 rounded-full font-medium';
-            } else {
-                document.getElementById('status-badge').innerText = 'Offline Mode';
-                document.getElementById('status-badge').className = 'text-xs bg-amber-500 text-white px-3 py-1 rounded-full font-medium';
-            }
-        } catch (e) {
-            console.error('Supabase initialization error:', e);
-        }
+<!-- Kicked -->
+<div id="kickModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(10,16,34,.6)">
+  <div class="card p-5 w-full max-w-sm">
+    <h2 class="text-lg font-bold mb-1">You were removed from the room</h2>
+    <p class="text-sm mb-3" style="color:var(--mute)">Your teacher removed you. You can rejoin if this was a mistake.</p>
+    <button class="btn btn-p w-full" id="rejoinBtn">Rejoin class</button>
+  </div>
+</div>
 
-        // Basic interactive placeholders
-        document.getElementById('btn-submit').addEventListener('click', () => {
-            const val = document.getElementById('student-answer').value;
-            if (!val.trim()) return;
-            alert('Answer submitted: ' + val);
-            document.getElementById('student-answer').value = '';
-        });
-    </script>
+<!-- Message modal -->
+<div id="msgModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(10,16,34,.6)">
+  <div class="card p-5 w-full max-w-sm">
+    <h2 class="text-lg font-bold mb-2">Private message to <span id="msgTo"></span></h2>
+    <textarea id="msgText" rows="3" class="field mb-3" placeholder="Write a short note"></textarea>
+    <div class="flex gap-2 justify-end"><button class="btn" id="msgCancel">Cancel</button><button class="btn btn-p" id="msgSend">Send message</button></div>
+  </div>
+</div>
+
+<div id="toast" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg text-sm" style="background:var(--ink);color:var(--bg);z-index:60"></div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+/* ================= SUPABASE TRANSPORT (replaces tab/room sync) ================= */
+const SB={url:'https://yivzqpevrcdazrgpfpas.supabase.co',key:'sb_publishable_nfyx78lzbJwqIBbMPGPUUQ_2n1GrjV-'};
+SB.url=SB.url.trim().replace(/\/rest\/v1\/?$/,'').replace(/\/+$/,'');
+let netId=null,netTimer=null,netBusy=false,tick=0,off=0;
+const srvNow=()=>Date.now()+off;
+let up={},lastSaved='',clr={},sq=Promise.resolve(),since=null,stRaw=null,stV=-1,imgs={},loading={},sharedC={},msgN=null,ansP={},ansT=null;
+async function rpc(fn,a){
+  const h={'Content-Type':'application/json',apikey:SB.key};if(SB.key.startsWith('eyJ'))h.Authorization='Bearer '+SB.key;
+  const r=await fetch(SB.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:h,body:JSON.stringify(a)});
+  const dh=r.headers.get('date');if(dh){const o=Date.parse(dh)-Date.now();if(!isNaN(o))off=o}
+  const t=await r.text();if(!r.ok)throw new Error(t);return t?JSON.parse(t):null;
+}
+async function sha(s){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return'x'+h}}
+const hsig=s=>{let h=0;for(let i=0;i<s.length;i+=997)h=(h*31+s.charCodeAt(i))|0;return s.length+'.'+h};
+const emit=m=>{if(ch.onmessage)ch.onmessage({data:m})};
+const queue=f=>{sq=sq.then(f).catch(e=>{console.error(e);setNet(false);if(role==='teacher')toast('Couldn’t save to the server. Check the setup steps.')})};
+const setWait=t=>{const e=document.querySelector('#sWaitTxt');if(e)e.textContent=t};
+const setNet=ok=>{const n=document.querySelector('#netStat');if(n&&!SB.url.includes('PASTE'))n.textContent=ok?'Live':'Reconnecting\u2026'};
+const ch={onmessage:null,postMessage(m){if(role==='teacher')teacherOut(m);else studentOut(m)}};
+function startNet(){netStop();tick=0;const f=async()=>{if(netBusy)return;netBusy=true;tick++;try{await(role==='teacher'?teacherTick():studentTick())}finally{netBusy=false}};f();netTimer=setInterval(f,2000)}
+function netStop(){clearInterval(netTimer);netTimer=null}
+
+/* teacher -> server */
+function teacherOut(m){
+  if(!RM.key)return;const k={p_code:RM.code,p_key:RM.key};
+  if(m.t==='state')queue(()=>saveState(m));
+  else if(m.t==='clear'){clr[m.pid]=Date.now();queue(()=>rpc('teacher_clear',{...k,p_page:m.pid}))}
+  else if(m.t==='msg')queue(()=>rpc('teacher_msg',{...k,p_sid:m.sid,p_text:m.text}));
+  else if(m.t==='kick')queue(()=>rpc('teacher_kick',{...k,p_sid:m.sid}));
+}
+async function saveState(m){
+  const k={p_code:RM.code,p_key:RM.key},pages=[];
+  for(const p of m.pages){
+    let bg=null;
+    if(p.bg){bg=hsig(p.bg);if(up[p.id]!==bg){try{await rpc('teacher_save_image',{...k,p_page:p.id,p_data:p.bg});up[p.id]=bg;lsSet('lw_up_'+RM.code,up)}catch(e){console.error(e);bg=null;toast('Couldn’t upload the picture for one page. It may be too large. Try a smaller file.')}}}
+    pages.push({id:p.id,bg,ins:p.ins||'',txt:p.txt||''});
+  }
+  const st={pages,cur:m.cur,reveal:m.reveal,open:!!m.open,timer:m.timer||null,teacher:m.teacher||'',anon:T.anon,clr},s=JSON.stringify(st);
+  if(s===lastSaved)return;
+  await rpc('teacher_save',{...k,p_state:st});lastSaved=s;
+}
+async function teacherTick(){
+  if(role!=='teacher'||!RM.key)return;
+  try{
+    const r=await rpc('teacher_poll',{p_code:RM.code,p_key:RM.key,p_since:since?new Date(Date.parse(since)-3000).toISOString():null});
+    r.answers.forEach(a=>{
+      emit({t:'ans',sid:a.sid,name:a.name,pid:a.pid,text:a.txt});
+      emit({t:'draw',sid:a.sid,name:a.name,pid:a.pid,img:a.draw});
+      emit({t:'submit',sid:a.sid,name:a.name,pid:a.pid,on:a.sub,text:a.txt,img:a.draw});
+      if(!since||a.at>since)since=a.at;
+    });
+    emit({t:'roster',list:r.students});setNet(true);
+  }catch(e){setNet(false)}
+}
+
+/* student -> server */
+function flushAns(){const p=ansP;ansP={};for(const pid in p)queue(()=>rpc('student_save_text',{p_code:RM.code,p_sid:sid,p_page:pid,p_txt:p[pid]}))}
+function studentOut(m){
+  if(!RM.code)return;const a={p_code:RM.code,p_sid:sid};
+  if(m.t==='join')queue(async()=>{
+    const r=await rpc('student_join',{...a,p_name:m.name});
+    if(r&&r.err){netStop();if(r.err==='kicked')emit({t:'kick',sid});else{toast('Room not found. Check the code.');needName()}return}
+    msgN=null;await studentRefresh();
+    for(const pid in my.ans)await rpc('student_save_text',{...a,p_page:pid,p_txt:my.ans[pid]});
+    for(const pid in my.draw)await rpc('student_save_draw',{...a,p_page:pid,p_draw:my.draw[pid]});
+    for(const pid in my.sub)if(my.sub[pid])await rpc('student_submit',{...a,p_page:pid,p_on:true});
+    startNet();
+  });
+  else if(m.t==='ans'){ansP[m.pid]=m.text;clearTimeout(ansT);ansT=setTimeout(flushAns,600)}
+  else if(m.t==='draw')queue(()=>rpc('student_save_draw',{...a,p_page:m.pid,p_draw:m.img||''}));
+  else if(m.t==='submit'){
+    clearTimeout(ansT);ansP={};
+    queue(async()=>{
+      if(m.on){await rpc('student_save_text',{...a,p_page:m.pid,p_txt:m.text||''});await rpc('student_save_draw',{...a,p_page:m.pid,p_draw:m.img||''})}
+      await rpc('student_submit',{...a,p_page:m.pid,p_on:!!m.on});
+    });
+  }
+}
+async function studentRefresh(){
+  const r=await rpc('get_state',{p_code:RM.code});if(!r)return;
+  stV=r.version;stRaw=r.state||{};my.clr=my.clr||{};
+  const c=stRaw.clr||{};
+  for(const pid in c)if(my.clr[pid]!==c[pid]){my.clr[pid]=c[pid];emit({t:'clear',pid})}
+  saveMy();emitState();
+}
+function emitState(){
+  if(!stRaw||!stRaw.pages)return;
+  if(!stRaw.open){emit({t:'state',pages:[],cur:0,reveal:false,timer:null,shared:{}});return}
+  const cur=stRaw.cur||0,pages=stRaw.pages.map(p=>({id:p.id,ins:p.ins,txt:p.txt,bg:p.bg?(imgs[p.id+p.bg]||null):null}));
+  emit({t:'state',pages,cur,reveal:!!stRaw.reveal,timer:stRaw.timer||null,shared:sharedC});
+  [cur,Math.min(S.view,cur)].forEach(i=>{
+    const p=stRaw.pages[i],key=p&&p.id+p.bg;
+    if(p&&p.bg&&!imgs[key]&&!loading[key]){loading[key]=1;rpc('get_image',{p_code:RM.code,p_page:p.id}).then(d=>{if(d){imgs[key]=d;emitState()}}).catch(()=>{loading[key]=0})}
+  });
+}
+async function studentTick(){
+  if(role!=='student'||!RM.code||kicked)return;
+  try{
+    const r=await rpc('student_ping',{p_code:RM.code,p_sid:sid});
+    if(!r||r.err){setNet(false);setWait('This room no longer exists. Check the room code.');return}
+    if(r.kicked){netStop();emit({t:'kick',sid});return}
+    if(msgN===null)msgN=r.msg_n;else if(r.msg_n>msgN){msgN=r.msg_n;emit({t:'msg',sid,text:r.msg})}
+    if(r.version!==stV)await studentRefresh();
+    else if(stRaw&&stRaw.reveal&&tick%2===0){
+      const p=stRaw.pages[Math.min(S.view,stRaw.cur||0)];
+      if(p){sharedC={...sharedC,[p.id]:await rpc('get_shared',{p_code:RM.code,p_sid:sid,p_page:p.id})||[]};emitState()}
+    }
+    setNet(true);
+    if(!stRaw||!stRaw.open)setWait(stRaw&&stRaw.teacher?'You’re in '+stRaw.teacher+'’s room. It will open shortly.':'You’re in the room. Your teacher will open it shortly.');
+  }catch(e){setNet(false);setWait('Can’t reach the server. Check your internet connection.')}
+}
+const lsGet=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
+let warned=false;
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){if(!warned){warned=true;toast('Page is too large to save for refresh. Live sync still works.')}}};
+const debounce=(f,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f(...a),ms)}};
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.remove('hidden');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.add('hidden'),3000)}
+
+const urlRoom=(new URLSearchParams(location.search).get('room')||'').toUpperCase().replace(/[^A-Z0-9-]/g,''),linkMode=!!urlRoom||location.hash==='#join';
+let role=linkMode?'student':(sessionStorage.getItem('lw_role')||null);
+let TC=null;try{TC=JSON.parse(localStorage.getItem('lw_tcreds'))}catch(e){}
+let RM={code:urlRoom||(role==='teacher'&&TC?TC.code:localStorage.getItem('lw_room'))||'',key:role==='teacher'&&TC&&!urlRoom?TC.key:'',name:role==='teacher'&&TC?TC.name:''};
+if(role==='teacher'&&!RM.key)role=null;
+
+/* ================= TEACHER ================= */
+let T=lsGet('lw_teacher',null)||{pages:[{id:uid(),bg:null,ins:''}],cur:0,reveal:false,anon:false,students:{}};
+Object.values(T.students).forEach(s=>s.online=false);
+const saveT=()=>lsSet('lw_teacher',T);
+const page=()=>T.pages[T.cur];
+const stName=(s,i)=>T.anon?'Student '+(i+1):s.name;
+
+function shared(){
+  if(!T.reveal)return null;
+  const out={};const list=Object.values(T.students);
+  T.pages.forEach(p=>{out[p.id]=list.map((s,i)=>({n:stName(s,i),t:(s.ans||{})[p.id]||'',d:(s.draw||{})[p.id]||''})).filter(x=>x.t||x.d)});
+  return out;
+}
+function push(){ch.postMessage({t:'state',pages:T.pages,cur:T.cur,reveal:T.reveal,open:!!T.open,timer:T.timer||null,teacher:RM.name||'',shared:shared()});saveT()}
+
+function renderPageInfo(){
+  $('#tCount').textContent=`Page ${T.cur+1} of ${T.pages.length}`;
+  $('#tPrev').disabled=T.cur===0;$('#tNext').disabled=T.cur===T.pages.length-1;
+  $('#tWs').innerHTML=page().bg?`<img src="${page().bg}" alt="Activity file for page ${T.cur+1}">`:`<p class="text-sm p-6 text-center" style="color:var(--mute);border:1px dashed var(--line);border-radius:8px">This page is blank. Upload an activity file or type instructions below.</p>`;
+  $('#tIns').value=page().ins||'';$('#tTxt').value=page().txt||'';
+}
+function renderToggles(){
+  $('#tAnon').setAttribute('aria-pressed',T.anon);$('#tAnonTxt').textContent=T.anon?'Show student names':'Anonymize answers';
+  $('#tReveal').setAttribute('aria-pressed',T.reveal);
+  $('#tOpen').setAttribute('aria-pressed',!!T.open);$('#tOpenTxt').textContent=T.open?'Room is open to students':'Open room to students';
+  $('#tOpenHint').textContent=T.open?'Students in this room can see your pages. Edits show up for them automatically.':'Room is closed. Students who join see a waiting screen until you open it.';
+}
+function renderGrid(){
+  const pid=page().id,list=Object.entries(T.students);
+  $('#tRosterN').textContent=list.filter(([,s])=>s.online).length;
+  $('#tRoster').innerHTML=list.length?list.map(([id,s],i)=>`<li class="flex items-center gap-2"><span class="dot ${s.online?'on':''}"></span><span class="flex-1 truncate text-sm">${esc(s.name)}</span><button class="btn" data-msg="${id}">Message</button><button class="btn btn-d" data-kick="${id}">Kick</button></li>`).join(''):`<li class="text-sm" style="color:var(--mute)">No one has joined yet. Open a new tab, switch to Student mode and enter a name.</li>`;
+  const nSub=list.filter(([,s])=>(s.sub||{})[pid]).length;
+  $('#tGridHint').textContent=(list.length?`${nSub} of ${list.length} submitted`:'')+(T.anon?', names hidden':'');
+  $('#tGrid').innerHTML=list.length?list.map(([id,s],i)=>{const t=(s.ans||{})[pid]||'',d=(s.draw||{})[pid]||'';
+    return `<article class="card p-3"><div class="flex items-center gap-2 mb-2"><span class="dot ${s.online?'on':''}"></span><b class="text-sm flex-1">${esc(stName(s,i))}</b>${(s.sub||{})[pid]?'<span class="hl">Submitted</span>':(t||d?'<span class="text-xs" style="color:var(--mute)">Typing</span>':'')}</div>${t?`<p class="whitespace-pre-wrap text-sm">${esc(t)}</p>`:`<p class="text-sm" style="color:var(--mute)">No text answer yet</p>`}${d?`<img class="mt-2 rounded" style="border:1px solid var(--line)" src="${d}" alt="Drawing from ${esc(stName(s,i))}">`:''}</article>`}).join(''):`<p class="text-sm" style="color:var(--mute)">Answers will appear here as students type.</p>`;
+}
+const renderT=()=>{renderPageInfo();renderToggles();renderGrid()};
+
+function goto(i){T.cur=Math.max(0,Math.min(T.pages.length-1,i));renderT();push()}
+$('#tPrev').onclick=()=>goto(T.cur-1);
+$('#tNext').onclick=()=>goto(T.cur+1);
+$('#tAdd').onclick=()=>{T.pages.splice(T.cur+1,0,{id:uid(),bg:null,ins:''});goto(T.cur+1)};
+$('#tDel').onclick=()=>{
+  const p=page();Object.values(T.students).forEach(s=>{delete (s.ans||{})[p.id];delete (s.draw||{})[p.id]});
+  if(T.pages.length===1)T.pages[0]={id:uid(),bg:null,ins:''};else{T.pages.splice(T.cur,1);T.cur=Math.min(T.cur,T.pages.length-1)}
+  renderT();push();
+};
+$('#tIns').oninput=e=>{page().ins=e.target.value;debouncedPush()};
+$('#tTxt').oninput=e=>{page().txt=e.target.value;debouncedPush()};
+const debouncedPush=debounce(push,250);
+$('#tClear').onclick=()=>{const pid=page().id;Object.values(T.students).forEach(s=>{delete (s.ans||{})[pid];delete (s.draw||{})[pid];delete (s.sub||{})[pid]});ch.postMessage({t:'clear',pid});renderGrid();push();toast('Cleared all answers on this page')};
+$('#tOpen').onclick=()=>{T.open=!T.open;renderToggles();push();toast(T.open?'Room is open. Students can see your pages.':'Room closed. Students see the waiting screen.')};
+$('#tAnon').onclick=()=>{T.anon=!T.anon;renderToggles();renderGrid();push()};
+$('#tReveal').onclick=()=>{T.reveal=!T.reveal;renderToggles();push();toast(T.reveal?'Students can now see shared answers':'Answers hidden from students')};
+
+// file upload
+const shrink=(src,maxW)=>new Promise(r=>{const im=new Image();im.onload=()=>{const k=Math.min(1,maxW/im.width),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);r(c.toDataURL('image/jpeg',.78))};im.src=src});
+const readURL=f=>new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(f)});
+async function loadFile(f){
+  const st=$('#tUpStatus');
+  try{
+    if(f.type==='application/pdf'){
+      const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise,n=Math.min(pdf.numPages,30),imgs=[];
+      for(let i=1;i<=n;i++){
+        st.textContent=`Rendering PDF page ${i} of ${n}…`;
+        const pg=await pdf.getPage(i),vp=pg.getViewport({scale:1.4}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;
+        await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;imgs.push(await hostImg(c.toDataURL('image/jpeg',.72)));
+      }
+      page().bg=imgs[0];
+      imgs.slice(1).forEach((b,k)=>T.pages.splice(T.cur+1+k,0,{id:uid(),bg:b,ins:''}));
+      st.textContent=n>1?`Loaded ${n} PDF pages starting here.`:'PDF loaded.';
+    }else if(/^image\/(png|jpeg)$/.test(f.type)){
+      page().bg=await hostImg(await shrink(await readURL(f),1400));st.textContent='Image loaded.';
+    }else{st.textContent='Please choose a PDF, PNG or JPG file.';return}
+    renderT();push();
+  }catch(err){st.textContent='Couldn’t read that file. Try another PDF or image.';console.error(err)}
+  }
+$('#tFile').onchange=async e=>{const f=e.target.files[0];if(f)await loadFile(f);e.target.value=''};
+
+// roster actions
+let msgTarget=null;
+$('#tRoster').onclick=e=>{
+  const m=e.target.dataset.msg,k=e.target.dataset.kick;
+  if(m){msgTarget=m;$('#msgTo').textContent=T.students[m].name;$('#msgText').value='';$('#msgModal').classList.remove('hidden');$('#msgText').focus()}
+  if(k){ch.postMessage({t:'kick',sid:k});delete T.students[k];renderGrid();push();toast('Student removed')}
+};
+$('#msgCancel').onclick=()=>$('#msgModal').classList.add('hidden');
+$('#msgSend').onclick=()=>{const t=$('#msgText').value.trim();if(t&&msgTarget){ch.postMessage({t:'msg',sid:msgTarget,text:t});toast('Message sent')}$('#msgModal').classList.add('hidden')};
+
+function teacherReceive(m){
+  if(m.t==='join'||m.t==='ans'||m.t==='draw'||m.t==='submit'){
+    if(!T.students[m.sid]){const old=Object.keys(T.students).find(k=>T.students[k].name===m.name&&!T.students[k].online);if(old){T.students[m.sid]=T.students[old];delete T.students[old]}}
+    const s=T.students[m.sid]||(T.students[m.sid]={name:m.name,online:true,ans:{},draw:{}});
+    s.name=m.name||s.name;s.online=true;s.ans=s.ans||{};s.draw=s.draw||{};s.sub=s.sub||{};
+    if(m.t==='join'){Object.assign(s.ans,m.ans||{});Object.assign(s.draw,m.draw||{});Object.assign(s.sub,m.sub||{});push()}
+    if(m.t==='ans'){s.ans[m.pid]=m.text;if(T.reveal)debouncedPush();else saveT()}
+    if(m.t==='draw'){s.draw[m.pid]=m.img;if(T.reveal)debouncedPush();else saveT()}
+    if(m.t==='submit'){s.sub[m.pid]=m.on;if(m.on){s.ans[m.pid]=m.text;if(m.img)s.draw[m.pid]=m.img}saveT()}
+    renderGrid();
+  }
+  if(m.t==='leave'&&T.students[m.sid]){T.students[m.sid].online=false;renderGrid()}
+  if(m.t==='roster'){
+    const keep={};
+    m.list.forEach(r=>{keep[r.sid]=1;const s=T.students[r.sid]||(T.students[r.sid]={name:r.name,ans:{},draw:{},sub:{}});s.name=r.name;s.online=r.online;s.ans=s.ans||{};s.draw=s.draw||{};s.sub=s.sub||{}});
+    Object.keys(T.students).forEach(k=>{if(!keep[k])delete T.students[k]});
+    saveT();renderGrid();
+  }
+}
+
+/* ================= STUDENT ================= */
+const sid=sessionStorage.getItem('lw_sid')||(sessionStorage.setItem('lw_sid',uid()),sessionStorage.getItem('lw_sid'));
+let S={pages:[],cur:0,reveal:false,shared:null,view:0},myName=localStorage.getItem('lw_name')||'',my=lsGet('lw_my_'+sid,{ans:{},draw:{}}),shownPid=null,kicked=false;
+my.sub=my.sub||{};
+const saveMy=()=>lsSet('lw_my_'+sid,my);
+const joinMsg=()=>({t:'join',sid,name:myName,ans:my.ans,draw:my.draw,sub:my.sub});
+
+function renderS(){
+  const has=S.pages.length>0;$('#sWait').classList.toggle('hidden',has);$('#sBody').classList.toggle('hidden',!has);
+  if(!has)return;
+  S.view=Math.min(S.view,S.cur);const p=S.pages[S.view];
+  $('#sTabs').innerHTML=S.pages.slice(0,S.cur+1).map((q,i)=>`<button class="btn ${i===S.view?'btn-p':''}" data-v="${i}">${i===S.cur?'<span class="hl">LIVE</span> ':''}Page ${i+1}</button>`).join('');
+  $('#sBack').classList.toggle('hidden',S.view===S.cur);
+  $('#sWs').innerHTML=p.bg?`<img src="${p.bg}" alt="Worksheet page ${S.view+1}">`:'';
+  const tx=p.txt||'';$('#sTxt').textContent=tx;$('#sTxt').classList.toggle('hidden',!tx);
+  $('#sIns').textContent=p.ins||((p.bg||tx)?'':'Your teacher hasn’t added anything to this page yet.');
+  if(shownPid!==p.id){shownPid=p.id;$('#sAns').value=my.ans[p.id]||'';paintCanvas()}
+  submitUI();
+  const sh=S.reveal&&S.shared&&S.shared[p.id];
+  $('#sShared').classList.toggle('hidden',!S.reveal);
+  $('#sSharedList').innerHTML=sh&&sh.length?sh.map(x=>`<div class="p-3 rounded-lg" style="border:1px solid var(--line)"><b class="text-sm">${esc(x.n)}</b>${x.t?`<p class="text-sm whitespace-pre-wrap mt-1">${esc(x.t)}</p>`:''}${x.d?`<img class="mt-2 rounded" src="${x.d}" alt="">`:''}</div>`).join(''):`<p class="text-sm" style="color:var(--mute)">No answers to show on this page yet.</p>`;
+}
+$('#sTabs').onclick=e=>{const v=e.target.closest('[data-v]');if(v){S.view=+v.dataset.v;renderS()}};
+$('#sBackBtn').onclick=()=>{S.view=S.cur;renderS()};
+const curPid=()=>S.pages[S.view]&&S.pages[S.view].id;
+const sendAns=debounce(()=>{const pid=curPid();if(pid)ch.postMessage({t:'ans',sid,name:myName,pid,text:my.ans[pid]||''})},150);
+$('#sAns').oninput=e=>{const pid=curPid();if(!pid)return;my.ans[pid]=e.target.value;saveMy();sendAns();unsub(pid)};
+
+// submit
+function submitUI(){
+  const pid=curPid();if(!pid)return;const done=!!my.sub[pid];if(done)erasing=false;
+  $('#sSubmit').classList.toggle('hidden',done);$('#sEdit').classList.toggle('hidden',!done);
+  const e=$('#sCanClear');e.classList.toggle('hidden',done);e.setAttribute('aria-pressed',erasing);e.textContent=erasing?'Eraser on: tap to draw':'Eraser';
+  $('#sAns').readOnly=done;$('#sCan').style.opacity=done?.55:1;
+  const m=$('#sMode');m.className='mode '+(done?'done':'draft');m.textContent=done?'✔ Submitted · locked':'✏ Draft · editing';
+  $('#sSubStatus').textContent=done?'Your teacher has your answer. Press Edit answer/drawing to change it.':erasing?'Eraser is on. Drag over your drawing to erase.':'Your teacher can see your draft. Press Submit answer when you\u2019re done.';
+}
+function unsub(pid){if(my.sub[pid]){my.sub[pid]=false;saveMy();ch.postMessage({t:'submit',sid,name:myName,pid,on:false});submitUI()}}
+$('#sSubmit').onclick=()=>{
+  const pid=curPid();if(!pid)return;
+  if(!(my.ans[pid]||'').trim()&&!my.draw[pid]){toast('Write or draw an answer first');return}
+  my.sub[pid]=true;saveMy();
+  ch.postMessage({t:'submit',sid,name:myName,pid,on:true,text:my.ans[pid]||'',img:my.draw[pid]||''});
+  submitUI();toast('Answer submitted');
+};
+
+// canvas
+const cv=$('#sCan'),cx=cv.getContext('2d');let drawing=false;
+function paintCanvas(){cx.clearRect(0,0,cv.width,cv.height);const d=my.draw[shownPid];if(d){const im=new Image();im.onload=()=>cx.drawImage(im,0,0,cv.width,cv.height);im.src=d}}
+const pos=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height]};
+cv.onpointerdown=e=>{const pd=curPid();if(!pd||my.sub[pd])return;drawing=true;cv.setPointerCapture(e.pointerId);const[x,y]=pos(e);cx.globalCompositeOperation=erasing?'destination-out':'source-over';cx.lineWidth=erasing?18:4;cx.lineCap='round';cx.strokeStyle='#2b2b2b';cx.beginPath();cx.moveTo(x,y);cx.lineTo(x+.1,y+.1);cx.stroke()};
+cv.onpointermove=e=>{if(!drawing)return;const[x,y]=pos(e);cx.lineTo(x,y);cx.stroke()};
+const endDraw=()=>{if(!drawing)return;drawing=false;const pid=curPid();my.draw[pid]=cv.toDataURL('image/png');saveMy();sendDrawSoon(pid);unsub(pid)};
+cv.onpointerup=endDraw;cv.onpointercancel=endDraw;
+let erasing=false;
+$('#sCanClear').onclick=()=>{erasing=!erasing;submitUI()};
+$('#sEdit').onclick=()=>{const pid=curPid();if(pid){unsub(pid);$('#sAns').focus()}};
+
+// join flow
+function join(){ch.postMessage(joinMsg());ch.postMessage({t:'hello'})}
+function needName(){$('#joinRoom').value=RM.code||localStorage.getItem('lw_room')||'';$('#joinRoom').readOnly=!!urlRoom;$('#joinName').value=myName||'';$('#joinModal').classList.remove('hidden');($('#joinRoom').value?$('#joinName'):$('#joinRoom')).focus()}
+$('#joinBtn').onclick=()=>{const n=$('#joinName').value.trim(),c=$('#joinRoom').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g,'');if(!n||!c){(n?$('#joinRoom'):$('#joinName')).focus();return}myName=n;RM.code=c;localStorage.setItem('lw_name',n);localStorage.setItem('lw_room',c);$('#joinModal').classList.add('hidden');join()};
+$('#joinName').onkeydown=e=>{if(e.key==='Enter')$('#joinBtn').click()};
+$('#rejoinBtn').onclick=()=>{kicked=false;$('#kickModal').classList.add('hidden');join()};
+
+function studentReceive(m){
+  if(m.t==='state'){
+    const changed=S.pages.length&&m.cur!==S.cur;
+    const wasLive=S.view===S.cur;
+    S={pages:m.pages,cur:m.cur,reveal:m.reveal,timer:m.timer||null,shared:m.shared,view:(wasLive||changed)?m.cur:S.view};
+    if(!kicked)renderS();
+  }
+  if(m.t==='teacher-up'&&myName&&!kicked)ch.postMessage(joinMsg());
+  if(m.t==='clear'){delete my.ans[m.pid];delete my.draw[m.pid];delete my.sub[m.pid];saveMy();if(shownPid===m.pid){$('#sAns').value='';paintCanvas();submitUI()}}
+  if((m.sid===sid||m.sid===netId)&&m.t==='msg'){const b=$('#sMsg');b.innerHTML=`<b>Message from your teacher</b><p class="mt-1 whitespace-pre-wrap">${esc(m.text)}</p><button class="btn mt-2" id="sMsgX">Dismiss</button>`;b.classList.remove('hidden');$('#sMsgX').onclick=()=>b.classList.add('hidden')}
+  if((m.sid===sid||m.sid===netId)&&m.t==='kick'){kicked=true;$('#kickModal').classList.remove('hidden')}
+}
+
+/* ================= COPY / PASTE PAGES ================= */
+let clip=null;try{clip=JSON.parse(localStorage.getItem('lw_clip'))}catch(e){}
+const toPng=src=>new Promise(r=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);c.toBlob(r,'image/png')};im.src=src});
+const saveClip=()=>{try{localStorage.setItem('lw_clip',JSON.stringify(clip))}catch(e){}};
+async function insertPage(d){if(d.bg&&d.bg.startsWith('data:'))d={...d,bg:await hostImg(d.bg)};T.pages.splice(T.cur+1,0,{id:uid(),bg:d.bg||null,ins:d.ins||'',txt:d.txt||''});goto(T.cur+1)}
+$('#tCopy').onclick=async()=>{
+  const p=page();clip={bg:p.bg,ins:p.ins||'',txt:p.txt||'',sig:0};let msg='Page copied. Use Paste page to add it.';
+  if(p.bg){try{const b=await toPng(p.bg);await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);clip.sig=b.size;msg='Page copied as a picture. Paste it here or into any app.'}catch(e){}}
+  saveClip();toast(msg);
+};
+$('#tPaste').onclick=async()=>{
+  try{const items=await navigator.clipboard.read();for(const it of items){const ty=it.types.find(t=>t.startsWith('image/'));if(ty){const b=await it.getType(ty);if(clip&&clip.sig&&clip.sig===b.size){insertPage(clip);toast('Pasted page')}else{insertPage({bg:await shrink(await readURL(b),1400)});toast('Pasted picture as a new page')}return}}}catch(e){}
+  if(clip){insertPage(clip);toast('Pasted page')}else toast('Nothing to paste yet. Copy a page first.');
+};
+document.addEventListener('paste',async e=>{
+  if(role!=='teacher'||linkMode||!e.clipboardData)return;
+  const f=[...e.clipboardData.files].find(x=>/^image\//.test(x.type)||x.type==='application/pdf');if(!f)return;
+  e.preventDefault();
+  if(f.type==='application/pdf'){await loadFile(f);return}
+  if(clip&&clip.sig&&clip.sig===f.size){insertPage(clip);toast('Pasted page')}else{insertPage({bg:await shrink(await readURL(f),1400)});toast('Pasted picture as a new page')}
+});
+
+const hostImg=async d=>d;
+const sendDrawSoon=debounce(pid=>ch.postMessage({t:'draw',sid,name:myName,pid,img:my.draw[pid]||''}),500);
+
+/* ================= TIMER ================= */
+const fmt=n=>Math.floor(n/60)+':'+String(n%60).padStart(2,'0');
+function beep(){try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=.15;o.start();o.stop(a.currentTime+.6)}catch(e){}}
+let beepedFor=0;
+$('#tStart').onclick=()=>{const m=Math.max(1,Math.min(180,parseInt($('#tMin').value)||5));T.timer={end:srvNow()+m*60000,dur:m*60};push();toast('Timer started: '+m+' min')};
+$('#tStop').onclick=()=>{T.timer=null;push()};
+setInterval(()=>{
+  const t=role==='teacher'?T.timer:(S.pages.length?S.timer:null),b=$('#timerBox');
+  if(!t){b.classList.add('hidden');return}
+  const left=Math.ceil((t.end-srvNow())/1000);
+  if(left<-600){b.classList.add('hidden');return}
+  b.classList.remove('hidden');b.classList.toggle('low',left>0&&left<=30);b.classList.toggle('done',left<=0);
+  if(left>0)b.textContent='⏱ '+fmt(left);
+  else{b.textContent='Time’s up!';if(beepedFor!==t.end&&left>-6){beepedFor=t.end;beep()}}
+},250);
+
+/* ================= RESIZABLE SPLIT ================= */
+let splitR=0.5;try{splitR=parseFloat(localStorage.getItem('lw_split'))||0.5}catch(e){}
+function applySplit(){
+  const box=$('#split'),bar=$('#splitBar'),A=$('#paneA'),h=box.clientHeight-bar.offsetHeight;if(h<=0)return;
+  const MIN=Math.min(120,h/3);splitR=Math.min(Math.max(splitR,MIN/h),1-MIN/h);
+  A.style.flex=`0 0 ${Math.round(h*splitR)}px`;
+}
+(function(){
+  const box=$('#split'),bar=$('#splitBar');
+  const save=()=>{try{localStorage.setItem('lw_split',splitR)}catch(e){}};
+  bar.addEventListener('pointerdown',e=>{bar.setPointerCapture(e.pointerId);bar.classList.add('drag');document.body.classList.add('dragging');bar.dragging=true});
+  bar.addEventListener('pointermove',e=>{if(!bar.dragging)return;const r=box.getBoundingClientRect(),h=box.clientHeight-bar.offsetHeight;splitR=(e.clientY-r.top-bar.offsetHeight/2)/h;applySplit()});
+  const end=()=>{if(!bar.dragging)return;bar.dragging=false;bar.classList.remove('drag');document.body.classList.remove('dragging');save()};
+  bar.addEventListener('pointerup',end);bar.addEventListener('pointercancel',end);
+  bar.addEventListener('dblclick',()=>{splitR=0.5;applySplit();save()});
+  bar.addEventListener('keydown',e=>{if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();splitR+=e.key==='ArrowUp'?-0.05:0.05;applySplit();save()}});
+  window.addEventListener('resize',applySplit);
+})();
+
+/* ================= ROLE + WIRING ================= */
+ch.onmessage=e=>{
+  const m=e.data,mt=e.meta;
+  if(mt){
+    if(mt.isMe&&mt.sameTab){if(role==='student'&&m.t==='join')netId=mt.peer;return}
+    if(role==='teacher'&&m.sid)m.sid=mt.peer;
+  }
+  if(role==='teacher')teacherReceive(m);else studentReceive(m)
+};
+function setRole(r){
+  if(linkMode&&r==='teacher')return;
+  if(role==='student'&&r==='teacher'&&myName)ch.postMessage({t:'leave',sid});
+  role=r;sessionStorage.setItem('lw_role',r);
+  $('#roleT').setAttribute('aria-pressed',r==='teacher');$('#roleS').setAttribute('aria-pressed',r==='student');
+  $('#teacher').classList.toggle('hidden',r!=='teacher');$('#student').classList.toggle('hidden',r!=='student');
+  if(r==='teacher'){renderT();applySplit();$('#roomCode').textContent=RM.code;startNet();push()}
+  else{netStop();S.pages=[];S.view=0;shownPid=null;stRaw=null;stV=-1;renderS();RM.code=RM.code||localStorage.getItem('lw_room')||'';$('#roomCode').textContent=RM.code||'—';if(myName&&RM.code)join();else needName()}
+}
+$('#roleT').onclick=()=>setRole('teacher');$('#roleS').onclick=()=>setRole('student');
+$('#shareBtn').onclick=async()=>{const link=location.origin+location.pathname+'?room='+encodeURIComponent(RM.code);try{await navigator.clipboard.writeText(link);toast('Student link copied: '+link)}catch(e){toast('Student link: '+link)}};
+window.addEventListener('pagehide',()=>{if(role==='student'&&myName)ch.postMessage({t:'leave',sid})});
+function showTL(){
+  $('#tlName').value=(TC&&TC.name)||localStorage.getItem('lw_tname')||'';
+  $('#tlCont').classList.toggle('hidden',!TC);$('#tlNew').classList.toggle('btn-p',!TC);$('#tlContCode').textContent=TC?'('+TC.code+')':'';
+  $('#tlErr').textContent='';$('#tlModal').classList.remove('hidden');$('#tlName').focus();
+}
+$('#pickT').onclick=()=>{$('#roleModal').classList.add('hidden');showTL()};
+$('#tlBack').onclick=()=>{$('#tlModal').classList.add('hidden');$('#roleModal').classList.remove('hidden')};
+async function enterRoom(c,k,n){
+  const er=$('#tlErr');er.textContent='Opening your room\u2026';
+  try{
+    const r=await rpc('teacher_open',{p_code:c,p_key:k});
+    if(r==='denied')return 'denied';
+    TC={code:c,key:k,name:n};localStorage.setItem('lw_tcreds',JSON.stringify(TC));localStorage.setItem('lw_tname',n);
+    RM={code:c,key:k,name:n};up=lsGet('lw_up_'+c,{});lastSaved='';
+    $('#tlModal').classList.add('hidden');setRole('teacher');return 'ok';
+  }catch(e){er.textContent=SB.url.includes('PASTE')?'The server isn\u2019t set up yet. See README.':'Couldn\u2019t reach the server. Check your connection.';return 'err'}
+}
+$('#tlCont').onclick=()=>enterRoom(TC.code,TC.key,$('#tlName').value.trim().slice(0,30)||TC.name);
+$('#tlNew').onclick=async()=>{
+  const n=$('#tlName').value.trim().slice(0,30);
+  if(n.length<2){$('#tlErr').textContent='Please type your name first.';$('#tlName').focus();return}
+  const slug=(n.toUpperCase().replace(/[^A-Z0-9]/g,'')||'ROOM').slice(0,10);
+  const k=[...crypto.getRandomValues(new Uint8Array(16))].map(x=>x.toString(16).padStart(2,'0')).join('');
+  for(let i=0;i<4;i++){const r=await enterRoom(slug+'-'+(1000+Math.floor(Math.random()*9000)),k,n);if(r!=='denied')return}
+  $('#tlErr').textContent='Couldn\u2019t create a room. Please try again.';
+};
+$('#pickS').onclick=()=>{$('#roleModal').classList.add('hidden');setRole('student')};
+if(linkMode){$('#roleSeg').classList.add('hidden');$('#shareBtn').classList.add('hidden')}
+if(role)setRole(role);else{$('#teacher').classList.add('hidden');$('#roleModal').classList.remove('hidden')}
+if(RM.key)up=lsGet('lw_up_'+RM.code,{});
+if(SB.url.includes('PASTE'))$('#netStat').textContent='Not set up';
+</script>
 </body>
 </html>
