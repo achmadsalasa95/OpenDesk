@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live-workbook | Interactive Classroom</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white shadow-md p-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold tracking-wide">📚 Live-workbook</h1>
+        <div id="status-badge" class="text-xs bg-indigo-500 px-3 py-1 rounded-full font-medium">Connecting...</div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow p-4 max-w-6xl mx-auto w-full grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Controls & Upload Section (Teacher/Creator view) -->
+        <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4">
+            <h2 class="font-semibold text-lg text-indigo-700">Workbook Controls</h2>
+            
+            <div>
+                <label class="block text-sm font-medium text-slate-600 mb-1">Upload Worksheet (Image/PDF)</label>
+                <input type="file" id="file-upload" accept="image/*,.pdf" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <button id="btn-present" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition shadow-sm">
+                    Present Current Page
+                </button>
+                <button id="btn-add-page" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-lg transition">
+                    + Add New Page
+                </button>
+            </div>
+
+            <div class="border-t pt-4 mt-auto">
+                <p class="text-xs text-slate-400">Share this link with your students. No logins required!</p>
+            </div>
+        </section>
+
+        <!-- Interactive Board Area -->
+        <section class="md:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4">
+            <div class="flex justify-between items-center">
+                <h2 class="font-semibold text-lg text-slate-700" id="current-view-title">Active Board</h2>
+                <span id="page-indicator" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md font-semibold">Page 1 of 1</span>
+            </div>
+
+            <!-- Canvas / Worksheet Display View -->
+            <div id="board-container" class="border-2 border-dashed border-slate-200 rounded-xl min-h-[400px] flex items-center justify-center bg-slate-50 relative overflow-hidden">
+                <p class="text-slate-400 text-sm">No worksheet uploaded yet. Upload an image to begin.</p>
+            </div>
+            
+            <!-- Student Answer Submission Row -->
+            <div class="flex gap-2">
+                <input type="text" id="student-answer" placeholder="Type your answer here..." class="flex-grow border border-slate-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button id="btn-submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-2 rounded-lg transition shadow-sm">
+                    Submit
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-4 text-xs text-slate-400 border-t bg-white">
+        Live-workbook • Instant interactive classroom learning
+    </footer>
+
+    <!-- App Logic Script -->
+    <script>
+        // Replace with your actual Supabase project credentials when setting up
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        
+        let supabaseClient = null;
+        try {
+            if (SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                document.getElementById('status-badge').innerText = 'Connected';
+                document.getElementById('status-badge').className = 'text-xs bg-emerald-500 text-white px-3 py-1 rounded-full font-medium';
+            } else {
+                document.getElementById('status-badge').innerText = 'Offline Mode';
+                document.getElementById('status-badge').className = 'text-xs bg-amber-500 text-white px-3 py-1 rounded-full font-medium';
+            }
+        } catch (e) {
+            console.error('Supabase initialization error:', e);
+        }
+
+        // Basic interactive placeholders
+        document.getElementById('btn-submit').addEventListener('click', () => {
+            const val = document.getElementById('student-answer').value;
+            if (!val.trim()) return;
+            alert('Answer submitted: ' + val);
+            document.getElementById('student-answer').value = '';
+        });
+    </script>
+</body>
+</html>
