@@ -18,7 +18,7 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;font-family:'Patrick Hand','Segoe Print','Comic Sans MS',system-ui,sans-serif;font-size:1.08rem;color:var(--ink);min-height:100vh;background-color:var(--page);
 background-image:linear-gradient(90deg,transparent 3.2rem,var(--margin) 3.2rem,var(--margin) calc(3.2rem + 2px),transparent calc(3.2rem + 2px)),repeating-linear-gradient(to bottom,transparent 0,transparent 1.9rem,var(--rule) 1.9rem,var(--rule) calc(1.9rem + 1px))}
 h2{font-family:'Caveat','Patrick Hand',cursive!important;font-size:1.75rem!important;line-height:1.1!important;font-weight:700!important}
-body>header{background:var(--cover);color:#fff3b8;border-bottom:4px double #2b1c0e;box-shadow:0 3px 0 rgba(0,0,0,.2)}
+body>header{position:relative;z-index:60;background:var(--cover);color:#fff3b8;border-bottom:4px double #2b1c0e;box-shadow:0 3px 0 rgba(0,0,0,.2)}
 body>header span,body>header b{color:#fff3b8!important}
 body>header #netStat{border-color:#fff3b8!important}
 .brand{font-family:'Caveat',cursive;font-size:2rem;font-weight:700;line-height:1;color:#fff3b8}
@@ -57,6 +57,8 @@ textarea.field[readonly]{opacity:.7;border-style:dashed}
 img.rounded{background:#fffbe0}
 .dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:var(--line)}
 .dot.on{background:#2e9e5b}
+@media(min-width:1024px){#sAnsWrap{position:sticky;top:1rem;max-height:calc(100vh - 2rem);overflow:auto}}
+@media(max-width:1023px){#sAnsWrap{position:sticky;bottom:.5rem;z-index:20;max-height:55vh;overflow:auto}}
 #split{height:max(540px,calc(100vh - 6.5rem))}
 #splitBar{height:14px;flex:none;cursor:row-resize;display:flex;align-items:center;justify-content:center;touch-action:none;border-radius:6px}
 #splitBar span{width:56px;height:5px;border-radius:4px;background:var(--pencil);opacity:.5;transition:opacity .15s}
@@ -134,8 +136,6 @@ canvas{touch-action:none;width:100%;background:#fffbe0;border:2px dashed var(--p
     <div id="paneA" class="card p-3 overflow-auto">
       <div class="lbl">Worksheet for this page</div>
       <div id="tWs" class="ws"></div>
-      <label class="lbl block mt-3" for="tTxt">Reading text (optional)</label>
-      <textarea id="tTxt" rows="5" class="field" placeholder="Type or paste a reading passage, dialogue or any text for students to read"></textarea>
       <label class="lbl block mt-3" for="tIns">Questions and instructions</label>
       <textarea id="tIns" rows="5" class="field" placeholder="Type your questions or instructions, one per line"></textarea>
       
@@ -152,7 +152,7 @@ canvas{touch-action:none;width:100%;background:#fffbe0;border:2px dashed var(--p
 </main>
 
 <!-- STUDENT -->
-<main id="student" class="hidden p-4 max-w-3xl mx-auto space-y-4">
+<main id="student" class="hidden p-4 max-w-6xl mx-auto space-y-4">
   <div id="sMsg" class="hidden card p-3" style="border-color:var(--acc)"></div>
   <div id="sWait" class="card p-6 text-center" style="color:var(--mute)"><span id="sWaitTxt">Waiting for your teacher to open this room…</span></div>
   <div id="sBody" class="hidden space-y-4">
@@ -160,25 +160,26 @@ canvas{touch-action:none;width:100%;background:#fffbe0;border:2px dashed var(--p
     <div id="sBack" class="hidden card p-2 px-3 text-sm flex items-center justify-between">
       <span>You’re viewing an earlier page.</span><button class="btn" id="sBackBtn">Go to live page</button>
     </div>
-    <div class="card p-3">
-      <div id="sWs" class="ws"></div>
-      <div id="sTxt" class="hidden mt-3 p-3 rounded-lg whitespace-pre-wrap" style="background:var(--bg)"></div>
-      <p id="sIns" class="mt-3 whitespace-pre-wrap"></p>
-    </div>
-    <div class="card p-3">
-      <div class="flex items-center justify-between gap-2 flex-wrap mb-1"><label class="lbl" style="margin:0" for="sAns">Your private answer</label><span id="sMode" class="mode draft">✏ Draft · editing</span></div>
-      <textarea id="sAns" rows="7" class="field" placeholder="Type your answer here. Only your teacher can see it."></textarea>
-      <div class="flex items-center justify-between mt-3 mb-1"><span class="lbl" style="margin:0">Optional drawing</span><button class="btn" id="sCanClear" aria-pressed="false">Eraser</button></div>
-      <canvas id="sCan" width="900" height="360"></canvas>
-      <div class="flex flex-wrap items-center gap-3 mt-4">
-        <button class="btn btn-p" id="sSubmit">✔ Submit answer</button>
-        <button class="btn btn-edit hidden" id="sEdit">✏ Edit answer/drawing</button>
-        <span id="sSubStatus" class="text-sm" style="color:var(--mute)"></span>
+    <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px] items-start">
+      <div class="card p-3 min-w-0">
+        <div id="sWs" class="ws"></div>
+        <p id="sIns" class="mt-3 whitespace-pre-wrap"></p>
       </div>
-    </div>
-    <div id="sShared" class="hidden card p-3">
-      <div class="lbl">Class answers shared by your teacher</div>
-      <div id="sSharedList" class="grid gap-3 sm:grid-cols-2"></div>
+      <div id="sAnsWrap" class="space-y-4">
+        <div class="card p-3">
+          <div class="flex items-center justify-between gap-2 flex-wrap mb-1"><label class="lbl" style="margin:0" for="sAns">Your answer</label><span id="sMode" class="mode draft">✏ Draft · editing</span></div>
+          <textarea id="sAns" rows="8" class="field" placeholder="Type your answer here. Only your teacher can see it."></textarea>
+          <div class="flex flex-wrap items-center gap-3 mt-3">
+            <button class="btn btn-p" id="sSubmit">✔ Submit answer</button>
+            <button class="btn btn-edit hidden" id="sEdit">✏ Edit answer</button>
+            <span id="sSubStatus" class="text-sm" style="color:var(--mute)"></span>
+          </div>
+        </div>
+        <div id="sShared" class="hidden card p-3">
+          <div class="lbl">Class answers shared by your teacher</div>
+          <div id="sSharedList" class="grid gap-3"></div>
+        </div>
+      </div>
     </div>
   </div>
 </main>
@@ -227,6 +228,19 @@ canvas{touch-action:none;width:100%;background:#fffbe0;border:2px dashed var(--p
     <h2 class="text-lg font-bold mb-1">You were removed from the room</h2>
     <p class="text-sm mb-3" style="color:var(--mute)">Your teacher removed you. You can rejoin if this was a mistake.</p>
     <button class="btn btn-p w-full" id="rejoinBtn">Rejoin class</button>
+    <button class="btn w-full mt-2 hidden" id="kickBack">Back to teacher mode</button>
+  </div>
+</div>
+
+<!-- Student detail -->
+<div id="stModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(10,16,34,.6)">
+  <div class="card p-5 w-full max-w-2xl flex flex-col" style="max-height:88vh">
+    <div class="flex items-start justify-between gap-3 mb-3">
+      <div><h2 id="stName"></h2><div id="stMeta" class="text-sm" style="color:var(--mute)"></div></div>
+      <button class="btn" id="stClose">Close</button>
+    </div>
+    <div id="stBody" class="overflow-auto space-y-4" style="flex:1 1 auto"></div>
+    <div id="stActs" class="flex flex-wrap gap-2 mt-4 pt-3" style="border-top:2px dashed var(--line)"></div>
   </div>
 </div>
 
@@ -310,7 +324,6 @@ function studentOut(m){
     if(r&&r.err){netStop();if(r.err==='kicked')emit({t:'kick',sid});else{toast('Room not found. Check the code.');needName()}return}
     msgN=null;await studentRefresh();
     for(const pid in my.ans)await rpc('student_save_text',{...a,p_page:pid,p_txt:my.ans[pid]});
-    for(const pid in my.draw)await rpc('student_save_draw',{...a,p_page:pid,p_draw:my.draw[pid]});
     for(const pid in my.sub)if(my.sub[pid])await rpc('student_submit',{...a,p_page:pid,p_on:true});
     startNet();
   });
@@ -319,7 +332,7 @@ function studentOut(m){
   else if(m.t==='submit'){
     clearTimeout(ansT);ansP={};
     queue(async()=>{
-      if(m.on){await rpc('student_save_text',{...a,p_page:m.pid,p_txt:m.text||''});await rpc('student_save_draw',{...a,p_page:m.pid,p_draw:m.img||''})}
+      if(m.on){await rpc('student_save_text',{...a,p_page:m.pid,p_txt:m.text||''})}
       await rpc('student_submit',{...a,p_page:m.pid,p_on:!!m.on});
     });
   }
@@ -388,7 +401,7 @@ function renderPageInfo(){
   $('#tCount').textContent=`Page ${T.cur+1} of ${T.pages.length}`;
   $('#tPrev').disabled=T.cur===0;$('#tNext').disabled=T.cur===T.pages.length-1;
   $('#tWs').innerHTML=page().bg?`<img src="${page().bg}" alt="Activity file for page ${T.cur+1}">`:`<p class="text-sm p-6 text-center" style="color:var(--mute);border:1px dashed var(--line);border-radius:8px">This page is blank. Upload an activity file or type instructions below.</p>`;
-  $('#tIns').value=page().ins||'';$('#tTxt').value=page().txt||'';
+  $('#tIns').value=page().ins||'';
 }
 function renderToggles(){
   $('#tAnon').setAttribute('aria-pressed',T.anon);$('#tAnonTxt').textContent=T.anon?'Show student names':'Anonymize answers';
@@ -396,14 +409,16 @@ function renderToggles(){
   $('#tOpen').setAttribute('aria-pressed',!!T.open);$('#tOpenTxt').textContent=T.open?'Room is open to students':'Open room to students';
   $('#tOpenHint').textContent=T.open?'Students in this room can see your pages. Edits show up for them automatically.':'Room is closed. Students who join see a waiting screen until you open it.';
 }
+function isOwnSid(id){return String(id).startsWith('T-')}
 function renderGrid(){
   const pid=page().id,list=Object.entries(T.students);
   $('#tRosterN').textContent=list.filter(([,s])=>s.online).length;
-  $('#tRoster').innerHTML=list.length?list.map(([id,s],i)=>`<li class="flex items-center gap-2"><span class="dot ${s.online?'on':''}"></span><span class="flex-1 truncate text-sm">${esc(s.name)}</span><button class="btn" data-msg="${id}">Message</button><button class="btn btn-d" data-kick="${id}">Kick</button></li>`).join(''):`<li class="text-sm" style="color:var(--mute)">No one has joined yet. Open a new tab, switch to Student mode and enter a name.</li>`;
+  $('#tRoster').innerHTML=list.length?list.map(([id,s])=>`<li><button class="btn w-full flex items-center gap-2" style="text-align:left" data-open="${esc(id)}"><span class="dot ${s.online?'on':''}"></span><span class="flex-1 truncate">${esc(s.name)}${isOwnSid(id)?' (you)':''}</span></button></li>`).join(''):`<li class="text-sm" style="color:var(--mute)">No one has joined yet. Share the student link.</li>`;
   const nSub=list.filter(([,s])=>(s.sub||{})[pid]).length;
-  $('#tGridHint').textContent=(list.length?`${nSub} of ${list.length} submitted`:'')+(T.anon?', names hidden':'');
-  $('#tGrid').innerHTML=list.length?list.map(([id,s],i)=>{const t=(s.ans||{})[pid]||'',d=(s.draw||{})[pid]||'';
-    return `<article class="card p-3"><div class="flex items-center gap-2 mb-2"><span class="dot ${s.online?'on':''}"></span><b class="text-sm flex-1">${esc(stName(s,i))}</b>${(s.sub||{})[pid]?'<span class="hl">Submitted</span>':(t||d?'<span class="text-xs" style="color:var(--mute)">Typing</span>':'')}</div>${t?`<p class="whitespace-pre-wrap text-sm">${esc(t)}</p>`:`<p class="text-sm" style="color:var(--mute)">No text answer yet</p>`}${d?`<img class="mt-2 rounded" style="border:1px solid var(--line)" src="${d}" alt="Drawing from ${esc(stName(s,i))}">`:''}</article>`}).join(''):`<p class="text-sm" style="color:var(--mute)">Answers will appear here as students type.</p>`;
+  $('#tGridHint').textContent=(list.length?`${nSub} of ${list.length} submitted. Click a card to open it.`:'')+(T.anon?' Names hidden.':'');
+  $('#tGrid').innerHTML=list.length?list.map(([id,s],i)=>{const t=(s.ans||{})[pid]||'',sub=(s.sub||{})[pid];
+    return `<article class="card p-3 cursor-pointer" tabindex="0" role="button" data-open="${esc(id)}" aria-label="Open ${esc(stName(s,i))}’s work"><div class="flex items-center gap-2 mb-2"><span class="dot ${s.online?'on':''}"></span><b class="flex-1 truncate">${esc(stName(s,i))}${isOwnSid(id)?' (you, test view)':''}</b>${sub?'<span class="hl">Submitted</span>':(t?'<span class="text-xs" style="color:var(--mute)">Typing</span>':'')}</div>${t?`<p class="whitespace-pre-wrap text-sm line-clamp-5">${esc(t)}</p>`:`<p class="text-sm" style="color:var(--mute)">No answer yet</p>`}</article>`}).join(''):`<p class="text-sm" style="color:var(--mute)">Answers will appear here as students type.</p>`;
+  renderStModal();
 }
 const renderT=()=>{renderPageInfo();renderToggles();renderGrid()};
 
@@ -417,7 +432,6 @@ $('#tDel').onclick=()=>{
   renderT();push();
 };
 $('#tIns').oninput=e=>{page().ins=e.target.value;debouncedPush()};
-$('#tTxt').oninput=e=>{page().txt=e.target.value;debouncedPush()};
 const debouncedPush=debounce(push,250);
 $('#tClear').onclick=()=>{const pid=page().id;Object.values(T.students).forEach(s=>{delete (s.ans||{})[pid];delete (s.draw||{})[pid];delete (s.sub||{})[pid]});ch.postMessage({t:'clear',pid});renderGrid();push();toast('Cleared all answers on this page')};
 $('#tOpen').onclick=()=>{T.open=!T.open;renderToggles();push();toast(T.open?'Room is open. Students can see your pages.':'Room closed. Students see the waiting screen.')};
@@ -450,11 +464,30 @@ $('#tFile').onchange=async e=>{const f=e.target.files[0];if(f)await loadFile(f);
 
 // roster actions
 let msgTarget=null;
-$('#tRoster').onclick=e=>{
-  const m=e.target.dataset.msg,k=e.target.dataset.kick;
-  if(m){msgTarget=m;$('#msgTo').textContent=T.students[m].name;$('#msgText').value='';$('#msgModal').classList.remove('hidden');$('#msgText').focus()}
-  if(k){ch.postMessage({t:'kick',sid:k});delete T.students[k];renderGrid();push();toast('Student removed')}
-};
+let openSid=null,kickArm=false,actsKey='';
+function closeSt(){openSid=null;$('#stModal').classList.add('hidden')}
+function openStudent(id){openSid=id;kickArm=false;actsKey='';$('#stModal').classList.remove('hidden');renderStModal()}
+function renderStModal(){
+  if(!openSid)return;
+  const s=T.students[openSid];if(!s){closeSt();return}
+  const idx=Object.keys(T.students).indexOf(openSid),own=isOwnSid(openSid),cur=page().id;
+  $('#stName').textContent=stName(s,idx)+(own?' (you, test view)':'');
+  $('#stMeta').textContent=s.online?'Online now':'Offline';
+  $('#stBody').innerHTML=T.pages.map((p,i)=>({p,i,t:(s.ans||{})[p.id]||'',sub:!!(s.sub||{})[p.id]})).filter(r=>r.t||r.p.id===cur).map(r=>`<section><div class="lbl">Page ${r.i+1}${r.p.id===cur?' (live page)':''} ${r.sub?'<span class="hl">Submitted</span>':''}</div><div class="p-3 rounded-lg whitespace-pre-wrap" style="background:var(--bg);border:2px solid var(--pencil);font-size:1.2rem;line-height:1.7">${r.t?esc(r.t):"<span style='color:var(--mute)'>No answer yet</span>"}</div></section>`).join('');
+  const k=openSid+own+kickArm;if(k===actsKey)return;actsKey=k;
+  const a=$('#stActs');
+  if(own){a.innerHTML='<p class="text-sm" style="color:var(--mute)">This is your own test view, so it can’t be messaged or removed.</p>';return}
+  a.innerHTML=`<button class="btn" id="stMsg">Send private message</button><button class="btn btn-d" id="stKick">${kickArm?'Click again to confirm':'Remove from room'}</button>`;
+  $('#stMsg').onclick=()=>{msgTarget=openSid;$('#msgTo').textContent=T.students[openSid].name;$('#msgText').value='';$('#msgModal').classList.remove('hidden');$('#msgText').focus()};
+  $('#stKick').onclick=()=>{if(!kickArm){kickArm=true;actsKey='';renderStModal();return}ch.postMessage({t:'kick',sid:openSid});delete T.students[openSid];closeSt();renderGrid();push();toast('Student removed')};
+}
+document.addEventListener('click',e=>{const el=e.target.closest('[data-open]');if(el&&role==='teacher')openStudent(el.dataset.open)});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&openSid)closeSt();
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('article[data-open]')){e.preventDefault();openStudent(e.target.dataset.open)}
+});
+$('#stClose').onclick=closeSt;
+$('#stModal').onclick=e=>{if(e.target.id==='stModal')closeSt()};
 $('#msgCancel').onclick=()=>$('#msgModal').classList.add('hidden');
 $('#msgSend').onclick=()=>{const t=$('#msgText').value.trim();if(t&&msgTarget){ch.postMessage({t:'msg',sid:msgTarget,text:t});toast('Message sent')}$('#msgModal').classList.add('hidden')};
 
@@ -479,7 +512,7 @@ function teacherReceive(m){
 }
 
 /* ================= STUDENT ================= */
-const sid=sessionStorage.getItem('lw_sid')||(sessionStorage.setItem('lw_sid',uid()),sessionStorage.getItem('lw_sid'));
+const sid=sessionStorage.getItem('lw_sid')||(sessionStorage.setItem('lw_sid',(TC?'T-':'')+uid()),sessionStorage.getItem('lw_sid'));
 let S={pages:[],cur:0,reveal:false,shared:null,view:0},myName=localStorage.getItem('lw_name')||'',my=lsGet('lw_my_'+sid,{ans:{},draw:{}}),shownPid=null,kicked=false;
 my.sub=my.sub||{};
 const saveMy=()=>lsSet('lw_my_'+sid,my);
@@ -492,9 +525,8 @@ function renderS(){
   $('#sTabs').innerHTML=S.pages.slice(0,S.cur+1).map((q,i)=>`<button class="btn ${i===S.view?'btn-p':''}" data-v="${i}">${i===S.cur?'<span class="hl">LIVE</span> ':''}Page ${i+1}</button>`).join('');
   $('#sBack').classList.toggle('hidden',S.view===S.cur);
   $('#sWs').innerHTML=p.bg?`<img src="${p.bg}" alt="Worksheet page ${S.view+1}">`:'';
-  const tx=p.txt||'';$('#sTxt').textContent=tx;$('#sTxt').classList.toggle('hidden',!tx);
-  $('#sIns').textContent=p.ins||((p.bg||tx)?'':'Your teacher hasn’t added anything to this page yet.');
-  if(shownPid!==p.id){shownPid=p.id;$('#sAns').value=my.ans[p.id]||'';paintCanvas()}
+  $('#sIns').textContent=p.ins||((p.bg)?'':'Your teacher hasn’t added anything to this page yet.');
+  if(shownPid!==p.id){shownPid=p.id;$('#sAns').value=my.ans[p.id]||''}
   submitUI();
   const sh=S.reveal&&S.shared&&S.shared[p.id];
   $('#sShared').classList.toggle('hidden',!S.reveal);
@@ -508,32 +540,21 @@ $('#sAns').oninput=e=>{const pid=curPid();if(!pid)return;my.ans[pid]=e.target.va
 
 // submit
 function submitUI(){
-  const pid=curPid();if(!pid)return;const done=!!my.sub[pid];if(done)erasing=false;
+  const pid=curPid();if(!pid)return;const done=!!my.sub[pid];
   $('#sSubmit').classList.toggle('hidden',done);$('#sEdit').classList.toggle('hidden',!done);
-  const e=$('#sCanClear');e.classList.toggle('hidden',done);e.setAttribute('aria-pressed',erasing);e.textContent=erasing?'Eraser on: tap to draw':'Eraser';
-  $('#sAns').readOnly=done;$('#sCan').style.opacity=done?.55:1;
+  $('#sAns').readOnly=done;
   const m=$('#sMode');m.className='mode '+(done?'done':'draft');m.textContent=done?'✔ Submitted · locked':'✏ Draft · editing';
-  $('#sSubStatus').textContent=done?'Your teacher has your answer. Press Edit answer/drawing to change it.':erasing?'Eraser is on. Drag over your drawing to erase.':'Your teacher can see your draft. Press Submit answer when you\u2019re done.';
+  $('#sSubStatus').textContent=done?'Your teacher has your answer. Press Edit answer to change it.':'Your teacher can see your draft. Press Submit answer when you’re done.';
 }
 function unsub(pid){if(my.sub[pid]){my.sub[pid]=false;saveMy();ch.postMessage({t:'submit',sid,name:myName,pid,on:false});submitUI()}}
 $('#sSubmit').onclick=()=>{
   const pid=curPid();if(!pid)return;
-  if(!(my.ans[pid]||'').trim()&&!my.draw[pid]){toast('Write or draw an answer first');return}
+  if(!(my.ans[pid]||'').trim()){toast('Write an answer first');return}
   my.sub[pid]=true;saveMy();
   ch.postMessage({t:'submit',sid,name:myName,pid,on:true,text:my.ans[pid]||'',img:my.draw[pid]||''});
   submitUI();toast('Answer submitted');
 };
 
-// canvas
-const cv=$('#sCan'),cx=cv.getContext('2d');let drawing=false;
-function paintCanvas(){cx.clearRect(0,0,cv.width,cv.height);const d=my.draw[shownPid];if(d){const im=new Image();im.onload=()=>cx.drawImage(im,0,0,cv.width,cv.height);im.src=d}}
-const pos=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height]};
-cv.onpointerdown=e=>{const pd=curPid();if(!pd||my.sub[pd])return;drawing=true;cv.setPointerCapture(e.pointerId);const[x,y]=pos(e);cx.globalCompositeOperation=erasing?'destination-out':'source-over';cx.lineWidth=erasing?18:4;cx.lineCap='round';cx.strokeStyle='#2b2b2b';cx.beginPath();cx.moveTo(x,y);cx.lineTo(x+.1,y+.1);cx.stroke()};
-cv.onpointermove=e=>{if(!drawing)return;const[x,y]=pos(e);cx.lineTo(x,y);cx.stroke()};
-const endDraw=()=>{if(!drawing)return;drawing=false;const pid=curPid();my.draw[pid]=cv.toDataURL('image/png');saveMy();sendDrawSoon(pid);unsub(pid)};
-cv.onpointerup=endDraw;cv.onpointercancel=endDraw;
-let erasing=false;
-$('#sCanClear').onclick=()=>{erasing=!erasing;submitUI()};
 $('#sEdit').onclick=()=>{const pid=curPid();if(pid){unsub(pid);$('#sAns').focus()}};
 
 // join flow
@@ -542,6 +563,7 @@ function needName(){$('#joinRoom').value=RM.code||localStorage.getItem('lw_room'
 $('#joinBtn').onclick=()=>{const n=$('#joinName').value.trim(),c=$('#joinRoom').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g,'');if(!n||!c){(n?$('#joinRoom'):$('#joinName')).focus();return}myName=n;RM.code=c;localStorage.setItem('lw_name',n);localStorage.setItem('lw_room',c);$('#joinModal').classList.add('hidden');join()};
 $('#joinName').onkeydown=e=>{if(e.key==='Enter')$('#joinBtn').click()};
 $('#rejoinBtn').onclick=()=>{kicked=false;$('#kickModal').classList.add('hidden');join()};
+$('#kickBack').onclick=()=>{kicked=false;$('#kickModal').classList.add('hidden');setRole('teacher')};
 
 function studentReceive(m){
   if(m.t==='state'){
@@ -551,9 +573,9 @@ function studentReceive(m){
     if(!kicked)renderS();
   }
   if(m.t==='teacher-up'&&myName&&!kicked)ch.postMessage(joinMsg());
-  if(m.t==='clear'){delete my.ans[m.pid];delete my.draw[m.pid];delete my.sub[m.pid];saveMy();if(shownPid===m.pid){$('#sAns').value='';paintCanvas();submitUI()}}
+  if(m.t==='clear'){delete my.ans[m.pid];delete my.draw[m.pid];delete my.sub[m.pid];saveMy();if(shownPid===m.pid){$('#sAns').value='';submitUI()}}
   if((m.sid===sid||m.sid===netId)&&m.t==='msg'){const b=$('#sMsg');b.innerHTML=`<b>Message from your teacher</b><p class="mt-1 whitespace-pre-wrap">${esc(m.text)}</p><button class="btn mt-2" id="sMsgX">Dismiss</button>`;b.classList.remove('hidden');$('#sMsgX').onclick=()=>b.classList.add('hidden')}
-  if((m.sid===sid||m.sid===netId)&&m.t==='kick'){kicked=true;$('#kickModal').classList.remove('hidden')}
+  if((m.sid===sid||m.sid===netId)&&m.t==='kick'){kicked=true;$('#kickBack').classList.toggle('hidden',!(TC&&!linkMode));$('#kickModal').classList.remove('hidden')}
 }
 
 /* ================= COPY / PASTE PAGES ================= */
@@ -579,7 +601,6 @@ document.addEventListener('paste',async e=>{
 });
 
 const hostImg=async d=>d;
-const sendDrawSoon=debounce(pid=>ch.postMessage({t:'draw',sid,name:myName,pid,img:my.draw[pid]||''}),500);
 
 /* ================= TIMER ================= */
 const fmt=n=>Math.floor(n/60)+':'+String(n%60).padStart(2,'0');
@@ -627,6 +648,7 @@ ch.onmessage=e=>{
 };
 function setRole(r){
   if(linkMode&&r==='teacher')return;
+  if(r==='teacher'&&!RM.key){if(TC){RM={code:TC.code,key:TC.key,name:TC.name};up=lsGet('lw_up_'+TC.code,{});lastSaved=''}else{showTL();return}}
   if(role==='student'&&r==='teacher'&&myName)ch.postMessage({t:'leave',sid});
   role=r;sessionStorage.setItem('lw_role',r);
   $('#roleT').setAttribute('aria-pressed',r==='teacher');$('#roleS').setAttribute('aria-pressed',r==='student');
