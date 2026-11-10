@@ -59,7 +59,8 @@ img.rounded{background:#fffbe0}
 .dot.on{background:#2e9e5b}
 @media(min-width:1024px){#sAnsWrap{position:sticky;top:1rem;max-height:calc(100vh - 2rem);overflow:auto}}
 @media(max-width:1023px){#sAnsWrap{position:sticky;bottom:.5rem;z-index:20;max-height:55vh;overflow:auto}}
-#split{height:max(540px,calc(100vh - 6.5rem))}
+#split{height:max(420px,calc(100vh - var(--hdr,4.5rem) - 2rem))}
+#split{height:max(420px,calc(100dvh - var(--hdr,4.5rem) - 2rem))}
 #splitBar{height:14px;flex:none;cursor:row-resize;display:flex;align-items:center;justify-content:center;touch-action:none;border-radius:6px}
 #splitBar span{width:56px;height:5px;border-radius:4px;background:var(--pencil);opacity:.5;transition:opacity .15s}
 #splitBar:hover span,#splitBar:focus-visible span,#splitBar.drag span{opacity:1}
@@ -126,10 +127,6 @@ canvas{touch-action:none;width:100%;background:#fffbe0;border:2px dashed var(--p
       <button class="tog" id="tReveal" aria-pressed="false"><span>Reveal answers to students</span><i></i></button>
     </section>
 
-    <section class="card p-3">
-      <div class="lbl">Students in room (<span id="tRosterN">0</span>)</div>
-      <ul id="tRoster" class="space-y-2"></ul>
-    </section>
   </aside>
 
   <section id="split" class="min-w-0 flex flex-col">
@@ -144,7 +141,7 @@ canvas{touch-action:none;width:100%;background:#fffbe0;border:2px dashed var(--p
     <div id="paneB" class="overflow-auto flex-1 min-h-0">
       <div class="flex items-baseline justify-between mb-2">
         <h2 class="font-semibold">Student answers on this page</h2>
-        <span class="text-sm" id="tGridHint" style="color:var(--mute)"></span>
+        <div class="flex items-center gap-3"><span class="text-sm" id="tGridHint" style="color:var(--mute)"></span><button class="btn" id="tFocus">Expand answers</button></div>
       </div>
       <div id="tGrid" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"></div>
     </div>
@@ -282,13 +279,15 @@ const ch={onmessage:null,postMessage(m){if(role==='teacher')teacherOut(m);else s
 function startNet(){netStop();tick=0;const f=async()=>{if(netBusy)return;netBusy=true;tick++;try{await(role==='teacher'?teacherTick():studentTick())}finally{netBusy=false}};f();netTimer=setInterval(f,2000)}
 function netStop(){clearInterval(netTimer);netTimer=null}
 
+let rawBy={};
+const canon=(raw,name)=>(String(raw).startsWith('T-')?'T-':'')+'s-'+String(name||'').trim().toLowerCase().replace(/\s+/g,' ').slice(0,30);
 /* teacher -> server */
 function teacherOut(m){
   if(!RM.key)return;const k={p_code:RM.code,p_key:RM.key};
   if(m.t==='state')queue(()=>saveState(m));
   else if(m.t==='clear'){clr[m.pid]=Date.now();queue(()=>rpc('teacher_clear',{...k,p_page:m.pid}))}
-  else if(m.t==='msg')queue(()=>rpc('teacher_msg',{...k,p_sid:m.sid,p_text:m.text}));
-  else if(m.t==='kick')queue(()=>rpc('teacher_kick',{...k,p_sid:m.sid}));
+  else if(m.t==='msg')(rawBy[m.sid]||[m.sid]).forEach(x=>queue(()=>rpc('teacher_msg',{...k,p_sid:x,p_text:m.text})));
+  else if(m.t==='kick')(rawBy[m.sid]||[m.sid]).forEach(x=>queue(()=>rpc('teacher_kick',{...k,p_sid:x})));
 }
 async function saveState(m){
   const k={p_code:RM.code,p_key:RM.key},pages=[];
@@ -305,13 +304,15 @@ async function teacherTick(){
   if(role!=='teacher'||!RM.key)return;
   try{
     const r=await rpc('teacher_poll',{p_code:RM.code,p_key:RM.key,p_since:since?new Date(Date.parse(since)-3000).toISOString():null});
-    r.answers.forEach(a=>{
-      emit({t:'ans',sid:a.sid,name:a.name,pid:a.pid,text:a.txt});
-      emit({t:'draw',sid:a.sid,name:a.name,pid:a.pid,img:a.draw});
-      emit({t:'submit',sid:a.sid,name:a.name,pid:a.pid,on:a.sub,text:a.txt,img:a.draw});
+    rawBy={};const kOf={},roster={};
+    r.students.forEach(x=>{const K=canon(x.sid,x.name);kOf[x.sid]=K;(rawBy[K]=rawBy[K]||[]).push(x.sid);const e=roster[K]||(roster[K]={sid:K,name:x.name,online:false});e.online=e.online||x.online;e.name=x.name});
+    r.answers.sort((a,b)=>a.at<b.at?-1:a.at>b.at?1:0).forEach(a=>{
+      const K=kOf[a.sid]||canon(a.sid,a.name);
+      emit({t:'ans',sid:K,name:a.name,pid:a.pid,text:a.txt});
+      emit({t:'submit',sid:K,name:a.name,pid:a.pid,on:a.sub,text:a.txt});
       if(!since||a.at>since)since=a.at;
     });
-    emit({t:'roster',list:r.students});setNet(true);
+    emit({t:'roster',list:Object.values(roster)});setNet(true);
   }catch(e){setNet(false)}
 }
 
@@ -412,10 +413,8 @@ function renderToggles(){
 function isOwnSid(id){return String(id).startsWith('T-')}
 function renderGrid(){
   const pid=page().id,list=Object.entries(T.students);
-  $('#tRosterN').textContent=list.filter(([,s])=>s.online).length;
-  $('#tRoster').innerHTML=list.length?list.map(([id,s])=>`<li><button class="btn w-full flex items-center gap-2" style="text-align:left" data-open="${esc(id)}"><span class="dot ${s.online?'on':''}"></span><span class="flex-1 truncate">${esc(s.name)}${isOwnSid(id)?' (you)':''}</span></button></li>`).join(''):`<li class="text-sm" style="color:var(--mute)">No one has joined yet. Share the student link.</li>`;
   const nSub=list.filter(([,s])=>(s.sub||{})[pid]).length;
-  $('#tGridHint').textContent=(list.length?`${nSub} of ${list.length} submitted. Click a card to open it.`:'')+(T.anon?' Names hidden.':'');
+  $('#tGridHint').textContent=(list.length?`${list.length} in room, ${nSub} submitted. Click a card to open it.`:'')+(T.anon?' Names hidden.':'');
   $('#tGrid').innerHTML=list.length?list.map(([id,s],i)=>{const t=(s.ans||{})[pid]||'',sub=(s.sub||{})[pid];
     return `<article class="card p-3 cursor-pointer" tabindex="0" role="button" data-open="${esc(id)}" aria-label="Open ${esc(stName(s,i))}’s work"><div class="flex items-center gap-2 mb-2"><span class="dot ${s.online?'on':''}"></span><b class="flex-1 truncate">${esc(stName(s,i))}${isOwnSid(id)?' (you, test view)':''}</b>${sub?'<span class="hl">Submitted</span>':(t?'<span class="text-xs" style="color:var(--mute)">Typing</span>':'')}</div>${t?`<p class="whitespace-pre-wrap text-sm line-clamp-5">${esc(t)}</p>`:`<p class="text-sm" style="color:var(--mute)">No answer yet</p>`}</article>`}).join(''):`<p class="text-sm" style="color:var(--mute)">Answers will appear here as students type.</p>`;
   renderStModal();
@@ -512,10 +511,14 @@ function teacherReceive(m){
 }
 
 /* ================= STUDENT ================= */
-const sid=sessionStorage.getItem('lw_sid')||(sessionStorage.setItem('lw_sid',(TC?'T-':'')+uid()),sessionStorage.getItem('lw_sid'));
-let S={pages:[],cur:0,reveal:false,shared:null,view:0},myName=localStorage.getItem('lw_name')||'',my=lsGet('lw_my_'+sid,{ans:{},draw:{}}),shownPid=null,kicked=false;
+let sid='';const normName=n=>String(n||'').trim().toLowerCase().replace(/\s+/g,' ').slice(0,30);
+let S={pages:[],cur:0,reveal:false,shared:null,view:0},myName=localStorage.getItem('lw_name')||'',my={ans:{},draw:{},sub:{},clr:{}},shownPid=null,kicked=false;
 my.sub=my.sub||{};
-const saveMy=()=>lsSet('lw_my_'+sid,my);
+const saveMy=()=>lsSet('lw_my_'+(RM.code||'')+'_'+sid,my);
+function ident(){
+  sid=(TC?'T-':'')+'s-'+normName(myName);
+  my=lsGet('lw_my_'+(RM.code||'')+'_'+sid,{});my.ans=my.ans||{};my.draw=my.draw||{};my.sub=my.sub||{};my.clr=my.clr||{};shownPid=null;
+}
 const joinMsg=()=>({t:'join',sid,name:myName,ans:my.ans,draw:my.draw,sub:my.sub});
 
 function renderS(){
@@ -560,7 +563,7 @@ $('#sEdit').onclick=()=>{const pid=curPid();if(pid){unsub(pid);$('#sAns').focus(
 // join flow
 function join(){ch.postMessage(joinMsg());ch.postMessage({t:'hello'})}
 function needName(){$('#joinRoom').value=RM.code||localStorage.getItem('lw_room')||'';$('#joinRoom').readOnly=!!urlRoom;$('#joinName').value=myName||'';$('#joinModal').classList.remove('hidden');($('#joinRoom').value?$('#joinName'):$('#joinRoom')).focus()}
-$('#joinBtn').onclick=()=>{const n=$('#joinName').value.trim(),c=$('#joinRoom').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g,'');if(!n||!c){(n?$('#joinRoom'):$('#joinName')).focus();return}myName=n;RM.code=c;localStorage.setItem('lw_name',n);localStorage.setItem('lw_room',c);$('#joinModal').classList.add('hidden');join()};
+$('#joinBtn').onclick=()=>{const n=$('#joinName').value.trim(),c=$('#joinRoom').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g,'');if(!n||!c){(n?$('#joinRoom'):$('#joinName')).focus();return}myName=n;RM.code=c;localStorage.setItem('lw_name',n);localStorage.setItem('lw_room',c);ident();$('#joinModal').classList.add('hidden');join()};
 $('#joinName').onkeydown=e=>{if(e.key==='Enter')$('#joinBtn').click()};
 $('#rejoinBtn').onclick=()=>{kicked=false;$('#kickModal').classList.add('hidden');join()};
 $('#kickBack').onclick=()=>{kicked=false;$('#kickModal').classList.add('hidden');setRole('teacher')};
@@ -619,22 +622,26 @@ setInterval(()=>{
 },250);
 
 /* ================= RESIZABLE SPLIT ================= */
-let splitR=0.5;try{splitR=parseFloat(localStorage.getItem('lw_split'))||0.5}catch(e){}
+let splitR=0.4,prevSplit=0.4;try{splitR=parseFloat(localStorage.getItem('lw_split2'))||0.4}catch(e){}
 function applySplit(){
+  document.documentElement.style.setProperty('--hdr',document.querySelector('body>header').offsetHeight+'px');
   const box=$('#split'),bar=$('#splitBar'),A=$('#paneA'),h=box.clientHeight-bar.offsetHeight;if(h<=0)return;
   const MIN=Math.min(120,h/3);splitR=Math.min(Math.max(splitR,MIN/h),1-MIN/h);
   A.style.flex=`0 0 ${Math.round(h*splitR)}px`;
 }
 (function(){
   const box=$('#split'),bar=$('#splitBar');
-  const save=()=>{try{localStorage.setItem('lw_split',splitR)}catch(e){}};
+  const save=()=>{try{localStorage.setItem('lw_split2',splitR)}catch(e){}};
   bar.addEventListener('pointerdown',e=>{bar.setPointerCapture(e.pointerId);bar.classList.add('drag');document.body.classList.add('dragging');bar.dragging=true});
   bar.addEventListener('pointermove',e=>{if(!bar.dragging)return;const r=box.getBoundingClientRect(),h=box.clientHeight-bar.offsetHeight;splitR=(e.clientY-r.top-bar.offsetHeight/2)/h;applySplit()});
   const end=()=>{if(!bar.dragging)return;bar.dragging=false;bar.classList.remove('drag');document.body.classList.remove('dragging');save()};
   bar.addEventListener('pointerup',end);bar.addEventListener('pointercancel',end);
-  bar.addEventListener('dblclick',()=>{splitR=0.5;applySplit();save()});
+  bar.addEventListener('dblclick',()=>{splitR=0.4;applySplit();save()});
   bar.addEventListener('keydown',e=>{if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();splitR+=e.key==='ArrowUp'?-0.05:0.05;applySplit();save()}});
   window.addEventListener('resize',applySplit);
+  let focused=false;
+  $('#tFocus').onclick=()=>{if(!focused){prevSplit=splitR;splitR=0;focused=true}else{splitR=prevSplit;focused=false}applySplit();$('#tFocus').textContent=focused?'Show activity':'Expand answers'};
+  bar.addEventListener('pointerdown',()=>{focused=false;$('#tFocus').textContent='Expand answers'});
 })();
 
 /* ================= ROLE + WIRING ================= */
@@ -654,7 +661,7 @@ function setRole(r){
   $('#roleT').setAttribute('aria-pressed',r==='teacher');$('#roleS').setAttribute('aria-pressed',r==='student');
   $('#teacher').classList.toggle('hidden',r!=='teacher');$('#student').classList.toggle('hidden',r!=='student');
   if(r==='teacher'){renderT();applySplit();$('#roomCode').textContent=RM.code;startNet();push()}
-  else{netStop();S.pages=[];S.view=0;shownPid=null;stRaw=null;stV=-1;renderS();RM.code=RM.code||localStorage.getItem('lw_room')||'';$('#roomCode').textContent=RM.code||'—';if(myName&&RM.code)join();else needName()}
+  else{netStop();S.pages=[];S.view=0;shownPid=null;stRaw=null;stV=-1;renderS();RM.code=RM.code||localStorage.getItem('lw_room')||'';$('#roomCode').textContent=RM.code||'—';if(myName&&RM.code){ident();join()}else needName()}
 }
 $('#roleT').onclick=()=>setRole('teacher');$('#roleS').onclick=()=>setRole('student');
 $('#shareBtn').onclick=async()=>{const link=location.origin+location.pathname+'?room='+encodeURIComponent(RM.code);try{await navigator.clipboard.writeText(link);toast('Student link copied: '+link)}catch(e){toast('Student link: '+link)}};
