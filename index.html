@@ -59,6 +59,11 @@ img.rounded{background:#fffbe0}
 .dot.on{background:#2e9e5b}
 @media(min-width:1024px){#sAnsWrap{position:sticky;top:1rem;max-height:calc(100vh - 2rem);overflow:auto}}
 @media(max-width:1023px){#sAnsWrap{position:sticky;bottom:.5rem;z-index:20;max-height:55vh;overflow:auto}}
+#student{-webkit-user-select:none;user-select:none}
+#student textarea{-webkit-user-select:text;user-select:text}
+.chip{padding:.1rem .55rem;min-width:2.2rem;cursor:grab}
+.chip.over,.dropping{outline:3px dashed var(--acc);outline-offset:-6px}
+#paneA.dropping{outline-offset:-8px}
 #split{height:max(420px,calc(100vh - var(--hdr,4.5rem) - 2rem))}
 #split{height:max(420px,calc(100dvh - var(--hdr,4.5rem) - 2rem))}
 #splitBar{height:14px;flex:none;cursor:row-resize;display:flex;align-items:center;justify-content:center;touch-action:none;border-radius:6px}
@@ -109,6 +114,7 @@ canvas{touch-action:none;width:100%;background:#fffbe0;border:2px dashed var(--p
         <b id="tCount" class="text-sm whitespace-nowrap">Page 1 of 1</b>
         <button class="btn" id="tNext">Next page</button>
       </div>
+      <div id="tStrip" class="flex flex-wrap gap-1 mt-3"></div>
       <div class="flex gap-2 mt-2">
         <button class="btn btn-p flex-1" id="tAdd">+ Add page</button>
         <button class="btn btn-d flex-1" id="tDel">Delete page</button>
@@ -116,8 +122,7 @@ canvas{touch-action:none;width:100%;background:#fffbe0;border:2px dashed var(--p
       <label class="lbl block mt-3" for="tFile">Upload Activity File</label>
       <input id="tFile" type="file" accept="application/pdf,image/png,image/jpeg" class="field text-sm">
       <p id="tUpStatus" class="text-xs mt-1" style="color:var(--mute)">PDF or PNG/JPG. A multi-page PDF fills this page and adds the rest after it.</p>
-      <div class="flex gap-2 mt-3"><button class="btn flex-1" id="tCopy">Copy page</button><button class="btn flex-1" id="tPaste">Paste page</button></div>
-      <p class="text-xs mt-1" style="color:var(--mute)">Copy puts the page on your clipboard as a picture. You can also press Ctrl+V to paste a screenshot, image or PDF as a new page.</p>
+      <p class="text-xs mt-3" style="color:var(--mute)">Tip: drag a PDF or image onto the worksheet to load it. Drag the numbered page buttons to reorder pages, or drop a file onto one to fill that page.</p>
     </section>
 
     <section class="card p-3 space-y-2">
@@ -165,7 +170,7 @@ canvas{touch-action:none;width:100%;background:#fffbe0;border:2px dashed var(--p
       <div id="sAnsWrap" class="space-y-4">
         <div class="card p-3">
           <div class="flex items-center justify-between gap-2 flex-wrap mb-1"><label class="lbl" style="margin:0" for="sAns">Your answer</label><span id="sMode" class="mode draft">✏ Draft · editing</span></div>
-          <textarea id="sAns" rows="8" class="field" placeholder="Type your answer here. Only your teacher can see it."></textarea>
+          <textarea id="sAns" rows="8" class="field" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-gramm="false" placeholder="Type your answer here. Pasting is turned off. Only your teacher can see it."></textarea>
           <div class="flex flex-wrap items-center gap-3 mt-3">
             <button class="btn btn-p" id="sSubmit">✔ Submit answer</button>
             <button class="btn btn-edit hidden" id="sEdit">✏ Edit answer</button>
@@ -401,7 +406,7 @@ function push(){ch.postMessage({t:'state',pages:T.pages,cur:T.cur,reveal:T.revea
 function renderPageInfo(){
   $('#tCount').textContent=`Page ${T.cur+1} of ${T.pages.length}`;
   $('#tPrev').disabled=T.cur===0;$('#tNext').disabled=T.cur===T.pages.length-1;
-  $('#tWs').innerHTML=page().bg?`<img src="${page().bg}" alt="Activity file for page ${T.cur+1}">`:`<p class="text-sm p-6 text-center" style="color:var(--mute);border:1px dashed var(--line);border-radius:8px">This page is blank. Upload an activity file or type instructions below.</p>`;
+  $('#tWs').innerHTML=page().bg?`<img src="${page().bg}" alt="Activity file for page ${T.cur+1}">`:`<p class="text-sm p-6 text-center" style="color:var(--mute);border:1px dashed var(--line);border-radius:8px">This page is blank. Drag a PDF or image here, use Upload Activity File, or type instructions below.</p>`;
   $('#tIns').value=page().ins||'';
 }
 function renderToggles(){
@@ -419,7 +424,8 @@ function renderGrid(){
     return `<article class="card p-3 cursor-pointer" tabindex="0" role="button" data-open="${esc(id)}" aria-label="Open ${esc(stName(s,i))}’s work"><div class="flex items-center gap-2 mb-2"><span class="dot ${s.online?'on':''}"></span><b class="flex-1 truncate">${esc(stName(s,i))}${isOwnSid(id)?' (you, test view)':''}</b>${sub?'<span class="hl">Submitted</span>':(t?'<span class="text-xs" style="color:var(--mute)">Typing</span>':'')}</div>${t?`<p class="whitespace-pre-wrap text-sm line-clamp-5">${esc(t)}</p>`:`<p class="text-sm" style="color:var(--mute)">No answer yet</p>`}</article>`}).join(''):`<p class="text-sm" style="color:var(--mute)">Answers will appear here as students type.</p>`;
   renderStModal();
 }
-const renderT=()=>{renderPageInfo();renderToggles();renderGrid()};
+function renderStrip(){$('#tStrip').innerHTML=T.pages.map((p,i)=>`<button draggable="true" class="btn chip ${i===T.cur?'btn-p':''}" data-pg="${i}" aria-label="Page ${i+1}">${i+1}</button>`).join('')}
+const renderT=()=>{renderPageInfo();renderToggles();renderGrid();renderStrip()};
 
 function goto(i){T.cur=Math.max(0,Math.min(T.pages.length-1,i));renderT();push()}
 $('#tPrev').onclick=()=>goto(T.cur-1);
@@ -586,15 +592,6 @@ let clip=null;try{clip=JSON.parse(localStorage.getItem('lw_clip'))}catch(e){}
 const toPng=src=>new Promise(r=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);c.toBlob(r,'image/png')};im.src=src});
 const saveClip=()=>{try{localStorage.setItem('lw_clip',JSON.stringify(clip))}catch(e){}};
 async function insertPage(d){if(d.bg&&d.bg.startsWith('data:'))d={...d,bg:await hostImg(d.bg)};T.pages.splice(T.cur+1,0,{id:uid(),bg:d.bg||null,ins:d.ins||'',txt:d.txt||''});goto(T.cur+1)}
-$('#tCopy').onclick=async()=>{
-  const p=page();clip={bg:p.bg,ins:p.ins||'',txt:p.txt||'',sig:0};let msg='Page copied. Use Paste page to add it.';
-  if(p.bg){try{const b=await toPng(p.bg);await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);clip.sig=b.size;msg='Page copied as a picture. Paste it here or into any app.'}catch(e){}}
-  saveClip();toast(msg);
-};
-$('#tPaste').onclick=async()=>{
-  try{const items=await navigator.clipboard.read();for(const it of items){const ty=it.types.find(t=>t.startsWith('image/'));if(ty){const b=await it.getType(ty);if(clip&&clip.sig&&clip.sig===b.size){insertPage(clip);toast('Pasted page')}else{insertPage({bg:await shrink(await readURL(b),1400)});toast('Pasted picture as a new page')}return}}}catch(e){}
-  if(clip){insertPage(clip);toast('Pasted page')}else toast('Nothing to paste yet. Copy a page first.');
-};
 document.addEventListener('paste',async e=>{
   if(role!=='teacher'||linkMode||!e.clipboardData)return;
   const f=[...e.clipboardData.files].find(x=>/^image\//.test(x.type)||x.type==='application/pdf');if(!f)return;
@@ -604,6 +601,49 @@ document.addEventListener('paste',async e=>{
 });
 
 const hostImg=async d=>d;
+
+/* ================= NO PASTE FOR STUDENTS ================= */
+(function(){
+  const ta=$('#sAns'),say=()=>toast('Pasting is turned off. Please type your answer.');
+  ['paste','drop','cut','copy','dragstart','contextmenu'].forEach(ev=>ta.addEventListener(ev,e=>{e.preventDefault();if(ev==='paste'||ev==='drop')say()}));
+  ta.addEventListener('beforeinput',e=>{
+    if(/^insertFrom(Paste|PasteAsQuotation|Drop|Yank)$/.test(e.inputType)||(e.inputType==='insertText'&&e.data&&e.data.length>30)){e.preventDefault();say()}
+  });
+  document.addEventListener('copy',e=>{if(role==='student')e.preventDefault()});
+  document.addEventListener('cut',e=>{if(role==='student')e.preventDefault()});
+})();
+
+/* ================= DRAG AND DROP (teacher) ================= */
+const okFile=f=>f&&(f.type==='application/pdf'||/^image\/(png|jpeg)$/.test(f.type));
+const hasFiles=e=>!!(e.dataTransfer&&[...e.dataTransfer.types].includes('Files'));
+async function dropFiles(files){
+  const all=[...files].filter(okFile);
+  if(!all.length){toast('Drop a PDF, PNG or JPG file');return}
+  const pdf=all.find(f=>f.type==='application/pdf');
+  if(pdf){await loadFile(pdf);return}
+  for(let i=0;i<all.length;i++){
+    if(i>0){T.pages.splice(T.cur+1,0,{id:uid(),bg:null,ins:''});T.cur++;renderT()}
+    await loadFile(all[i]);
+  }
+}
+(function(){
+  const zone=$('#paneA'),strip=$('#tStrip');let dragPg=null;
+  zone.addEventListener('dragover',e=>{if(role==='teacher'&&hasFiles(e)){e.preventDefault();zone.classList.add('dropping')}});
+  zone.addEventListener('dragleave',e=>{if(!zone.contains(e.relatedTarget))zone.classList.remove('dropping')});
+  zone.addEventListener('drop',e=>{zone.classList.remove('dropping');if(role==='teacher'&&hasFiles(e)){e.preventDefault();dropFiles(e.dataTransfer.files)}});
+  ['dragover','drop'].forEach(ev=>document.addEventListener(ev,e=>{if(hasFiles(e))e.preventDefault()}));
+  strip.addEventListener('click',e=>{const b=e.target.closest('[data-pg]');if(b)goto(+b.dataset.pg)});
+  strip.addEventListener('dragstart',e=>{const b=e.target.closest('[data-pg]');if(!b)return;dragPg=+b.dataset.pg;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain','page')});
+  strip.addEventListener('dragover',e=>{const b=e.target.closest('[data-pg]');if(b&&(dragPg!==null||hasFiles(e))){e.preventDefault();b.classList.add('over')}});
+  strip.addEventListener('dragleave',e=>{const b=e.target.closest('[data-pg]');if(b)b.classList.remove('over')});
+  strip.addEventListener('drop',e=>{
+    const b=e.target.closest('[data-pg]');if(!b)return;e.preventDefault();b.classList.remove('over');const to=+b.dataset.pg;
+    if(hasFiles(e)){goto(to);dropFiles(e.dataTransfer.files);return}
+    if(dragPg===null||dragPg===to){dragPg=null;return}
+    const id=T.pages[T.cur].id,[pg]=T.pages.splice(dragPg,1);T.pages.splice(to,0,pg);T.cur=T.pages.findIndex(q=>q.id===id);dragPg=null;renderT();push();
+  });
+  strip.addEventListener('dragend',()=>{dragPg=null;strip.querySelectorAll('.over').forEach(x=>x.classList.remove('over'))});
+})();
 
 /* ================= TIMER ================= */
 const fmt=n=>Math.floor(n/60)+':'+String(n%60).padStart(2,'0');
