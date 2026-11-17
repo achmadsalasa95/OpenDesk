@@ -10,54 +10,210 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
 <style>
-:root{--page:#fbe8a0;--rule:#e2c76c;--margin:#e48f80;--card:#fffbe3;--ink:#2f2a1c;--mute:#6b6040;--line:#b8a768;--pencil:#3b362a;--hl:#ffd84d;--acc:#8a6100;--danger:#b3261e;--edit-bg:#c9e6ff;--edit-ink:#0f2a44;--cover:#6b4a2b;--surface:var(--card);--bg:var(--page);
-box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--page:#2a2412;--rule:#40381c;--margin:#8a4a40;--card:#3a331b;--ink:#f4e9bd;--mute:#c9bc88;--line:#6b5f33;--pencil:#e6d9a6;--acc:#ffd84d;--danger:#ff8a80;--edit-bg:#274763;--edit-ink:#dcefff;--cover:#4a3320;color-scheme:dark}}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-*,*::before,*::after{box-sizing:inherit}
-body{margin:0;font-family:'Patrick Hand','Segoe Print','Comic Sans MS',system-ui,sans-serif;font-size:1.08rem;color:var(--ink);min-height:100vh;background-color:var(--page);
+:root{--page:#fbe8a0;--rule:#e2c76c;--margin:#e48f80;--card:#fffbe3;--ink:#2f2a1c;--mute:#6b6040;--line:#b8a768;--pencil:#3b362a;--hl:#ffd84d;--acc:#8a6100;--danger:#b3261e;--edit-bg:#c9e6ff;--edit-ink:#0f2a44;--cover:#6b4a2b}
+body{margin:0;font-family:'Patrick Hand','Segoe Print',sans-serif;font-size:1.08rem;color:var(--ink);min-height:100vh;background-color:var(--page);
 background-image:linear-gradient(90deg,transparent 3.2rem,var(--margin) 3.2rem,var(--margin) calc(3.2rem + 2px),transparent calc(3.2rem + 2px)),repeating-linear-gradient(to bottom,transparent 0,transparent 1.9rem,var(--rule) 1.9rem,var(--rule) calc(1.9rem + 1px))}
 h2{font-family:'Caveat','Patrick Hand',cursive!important;font-size:1.75rem!important;line-height:1.1!important;font-weight:700!important}
-body>header{position:relative;z-index:60;background:var(--cover);color:#fff3b8;border-bottom:4px double #2b1c0e;box-shadow:0 3px 0 rgba(0,0,0,.2)}
-body>header span,body>header b{color:#fff3b8!important}
-body>header #netStat{border-color:#fff3b8!important}
-.brand{font-family:'Caveat',cursive;font-size:2rem;font-weight:700;line-height:1;color:#fff3b8}
+body>header{background:var(--cover);color:#fff3b8;border-bottom:4px double #2b1c0e;box-shadow:0 3px 0 rgba(0,0,0,.2)}
+.brand{font-family:'Caveat',cursive;font-size:2rem;font-weight:700;color:#fff3b8}
 .card{background:var(--card);color:var(--ink);border:2px solid var(--pencil);border-radius:6px 16px 8px 14px;box-shadow:3px 4px 0 rgba(60,45,10,.22)}
-.btn{font:inherit;font-size:1rem;padding:.35rem .85rem;border:2px solid var(--pencil);border-radius:8px 14px 9px 13px;background:var(--card);color:var(--ink);cursor:pointer;box-shadow:2px 3px 0 rgba(60,45,10,.28);transition:transform .08s,box-shadow .08s}
+.btn{font:inherit;font-size:1rem;padding:.35rem .85rem;border:2px solid var(--pencil);border-radius:8px 14px 9px 13px;background:var(--card);color:var(--ink);cursor:pointer;box-shadow:2px 3px 0 rgba(60,45,10,.28)}
 .btn:hover:not(:disabled){transform:translate(-1px,-1px);box-shadow:3px 4px 0 rgba(60,45,10,.3)}
-.btn:active:not(:disabled){transform:translate(1px,1px);box-shadow:none}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.btn:focus-visible,.tog:focus-visible,.field:focus-visible,.seg button:focus-visible,#splitBar:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 .btn-p{background:var(--hl);color:#2f2a1c;font-weight:700}
 .btn-d{color:var(--danger)}
-.btn-edit{background:var(--edit-bg);color:var(--edit-ink);font-weight:700}
-.tog{font:inherit;font-size:1rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;width:100%;padding:.45rem .7rem;border:2px solid var(--pencil);border-radius:8px 14px 9px 13px;background:var(--card);color:var(--ink);cursor:pointer;text-align:left;box-shadow:2px 3px 0 rgba(60,45,10,.28)}
-.tog i{width:38px;height:22px;border-radius:99px;border:2px solid var(--pencil);background:var(--card);position:relative;flex:none;transition:background .15s}
-.tog i::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--pencil);transition:transform .15s}
-.tog[aria-pressed="true"] i{background:var(--hl)}
-.tog[aria-pressed="true"] i::after{transform:translateX(16px)}
 .field{width:100%;font:inherit;padding:.45rem .7rem;border:2px solid var(--pencil);border-radius:5px 11px 6px 10px;background:var(--card);color:var(--ink)}
-textarea.field{line-height:1.9rem;padding:0 .7rem 0 2.6rem;background-attachment:local;
-background-image:linear-gradient(90deg,transparent 2rem,var(--margin) 2rem,var(--margin) calc(2rem + 2px),transparent calc(2rem + 2px)),repeating-linear-gradient(to bottom,transparent 0,transparent calc(1.9rem - 1px),var(--rule) calc(1.9rem - 1px),var(--rule) 1.9rem)}
-textarea.field[readonly]{opacity:.7;border-style:dashed}
-.field::placeholder{color:var(--mute);opacity:.8}
-.seg{display:flex;gap:2px;padding:3px;border:2px solid var(--pencil);border-radius:12px;background:var(--card)}
-.seg button{font:inherit;font-size:1rem;padding:.25rem .85rem;border:0;background:transparent;color:var(--mute);cursor:pointer;border-radius:8px}
-.seg button[aria-pressed="true"]{background:var(--hl);color:#2f2a1c;font-weight:700}
-.hl{background:var(--hl);color:#2f2a1c;border-radius:4px;padding:0 .4rem;font-weight:700;font-size:.85rem}
+textarea.field{line-height:1.9rem;padding:0 .7rem;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(1.9rem - 1px),var(--rule) calc(1.9rem - 1px),var(--rule) 1.9rem)}
 .lbl{font-size:1rem;font-weight:700;color:var(--mute);margin-bottom:.3rem}
 .mode{display:inline-block;padding:.1rem .8rem;border:2px solid var(--pencil);border-radius:99px;font-weight:700;font-size:1rem}
 .mode.draft{background:var(--hl);color:#2f2a1c}
 .mode.done{background:#a5d6a7;color:#12331a}
-.timer{font-family:'Caveat',cursive;font-size:1.9rem;font-weight:700;line-height:1.2;padding:0 1rem;border:3px solid #fff3b8;border-radius:12px;color:#fff3b8;background:rgba(0,0,0,.22);min-width:6rem;text-align:center}
-.timer.low,.timer.done{background:#b3261e}
-.timer.low{animation:pulse 1s infinite}
-@keyframes pulse{50%{opacity:.6}}
-.ws img{display:block;width:100%;height:auto;border-radius:6px;border:2px solid var(--pencil)}
-img.rounded{background:#fffbe0}
+.ws{background:#fffbe0;border:2px dashed var(--pencil);border-radius:8px;padding:1rem;min-height:280px}
+.chip{padding:.1rem .55rem;min-width:2.2rem;cursor:pointer}
 .dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:var(--line)}
 .dot.on{background:#2e9e5b}
-@media(min-width:1024px){#sAnsWrap{position:sticky;top:1rem;max-height:calc(100vh - 2rem);overflow:auto}}
-@media(max-width:1023px){#sAnsWrap{position:sticky;bottom:.5rem;z-index:20;max-height:55vh;overflow:auto}}
-#student{-webkit-user-select:none;user-select:none}
-#student textarea{-webkit-user-
+</style>
+</head>
+<body class="flex flex-col min-h-screen">
+<header class="flex flex-wrap items-center gap-3 justify-between px-4 py-3">
+  <div class="flex items-center gap-3">
+    <span class="brand">✏️ Opendesk</span>
+    <span class="text-sm" style="color:#fff3b8">Room <b id="roomCode">—</b></span>
+    <span id="netStat" class="text-xs px-2 py-1 rounded" style="border:1px solid #fff3b8">Offline</span>
+  </div>
+  <div class="flex items-center gap-3">
+    <button class="btn" id="shareBtn">Copy room link</button>
+    <div class="flex gap-1" id="roleSeg">
+      <button class="btn btn-p" id="roleT">Teacher mode</button>
+      <button class="btn" id="roleS">Student mode</button>
+    </div>
+  </div>
+</header>
+
+<!-- TEACHER -->
+<main id="teacher" class="grid gap-4 p-4 lg:grid-cols-[320px_1fr] max-w-[1400px] mx-auto w-full flex-grow">
+  <aside class="space-y-4">
+    <section class="card p-3">
+      <button class="btn w-full btn-p" id="tOpen">Open room to students</button>
+      <p id="tOpenHint" class="text-xs mt-2" style="color:var(--mute)">Room is currently closed.</p>
+    </section>
+    <section class="card p-3">
+      <div class="lbl">Preloaded Chapter 4 Activities</div>
+      <div class="flex items-center justify-between gap-2">
+        <button class="btn" id="tPrev">Prev</button>
+        <b id="tCount" class="text-sm">Page 1 of 5</b>
+        <button class="btn" id="tNext">Next</button>
+      </div>
+      <div id="tStrip" class="flex flex-wrap gap-1 mt-3"></div>
+      <div class="flex gap-2 mt-2">
+        <button class="btn btn-p flex-1" id="tAdd">+ Add page</button>
+        <button class="btn btn-d flex-1" id="tDel">Delete</button>
+      </div>
+      <label class="lbl block mt-3" for="tFile">Upload Custom Image/PDF</label>
+      <input id="tFile" type="file" accept="application/pdf,image/png,image/jpeg" class="field text-sm">
+    </section>
+    <section class="card p-3 space-y-2">
+      <div class="lbl">Class controls</div>
+      <button class="btn w-full btn-d" id="tClear">Clear answers on this page</button>
+      <button class="btn w-full" id="tAnon">Toggle student names</button>
+      <button class="btn w-full" id="tReveal">Toggle reveal answers</button>
+    </section>
+  </aside>
+
+  <section class="grid grid-rows-[auto_1fr] gap-4 min-w-0">
+    <div class="card p-3">
+      <div class="lbl">Worksheet View</div>
+      <div id="tWs" class="ws mb-3"></div>
+      <label class="lbl block" for="tIns">Activity Instructions & Questions</label>
+      <textarea id="tIns" rows="4" class="field"></textarea>
+    </div>
+    <div class="card p-3 overflow-auto">
+      <h2 class="font-semibold mb-2">Student answers on this page</h2>
+      <div id="tGrid" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"></div>
+    </div>
+  </section>
+</main>
+
+<!-- STUDENT -->
+<main id="student" class="hidden p-4 max-w-6xl mx-auto space-y-4 w-full flex-grow">
+  <div id="sWait" class="card p-8 text-center text-lg" style="color:var(--mute)">Waiting for your teacher to open this room…</div>
+  <div id="sBody" class="hidden space-y-4">
+    <div class="flex flex-wrap items-center gap-2" id="sTabs"></div>
+    <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px] items-start">
+      <div class="card p-3">
+        <div id="sWs" class="ws"></div>
+      </div>
+      <div class="card p-3 space-y-3">
+        <div class="flex items-center justify-between"><label class="lbl" for="sAns">Your answer</label><span id="sMode" class="mode draft">Draft</span></div>
+        <textarea id="sAns" rows="8" class="field" placeholder="Type your answer here independently..."></textarea>
+        <button class="btn btn-p w-full" id="sSubmit">✔ Submit answer</button>
+        <button class="btn w-full hidden" id="sEdit">✏ Edit answer</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Modals -->
+<div id="joinModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(10,16,34,.6)">
+  <div class="card p-5 w-full max-w-sm">
+    <h2 class="text-lg font-bold mb-1">Join class</h2>
+    <label class="lbl block" for="joinRoom">Room code</label>
+    <input id="joinRoom" class="field mb-3" style="text-transform:uppercase">
+    <label class="lbl block" for="joinName">Your name</label>
+    <input id="joinName" class="field mb-3">
+    <button class="btn btn-p w-full" id="joinBtn">Join</button>
+  </div>
+</div>
+
+<div id="toast" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded text-sm bg-black text-white z-60"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.remove('hidden');setTimeout(()=>t.classList.add('hidden'),3000)};
+
+let role='teacher', RM={code:'CH4-1234',key:'k1'}, sid='s-student', myName='';
+let T={
+  open:true, cur:0, anon:false, reveal:false, students:{},
+  pages:[
+    {id:'p1', bg:null, ins:'Chapter 4: Around the City - Section 1 Vocabulary\nMatch or write descriptions for the city places:\n1. The Bank (Where your money is)\n2. The Hospital (Where you go when you are sick)\n3. The Post Office (Where you buy stamps)\n4. The Bookstore (Where you buy books & magazines)'},
+    {id:'p2', bg:null, ins:'Grammar: The Past Continuous\nRule: [Subject] + was/were + verb-ing\nExample: At nine o’clock yesterday morning, I was driving to the bank.\nTask: Write 3 sentences in the past continuous.'},
+    {id:'p3', bg:null, ins:'Reading & True/False Activity (City Scene)\nLook at your class slide and answer True (A) or False (B):\n1. An older woman was walking her dog.\n2. A woman was riding her bike in the street.'},
+    {id:'p4', bg:null, ins:'Coordinating Conjunctions: and, but, or, so\nExample: We are going to the museum, and then we are going for ice cream.\nTask: Write two sentences using "so" and two using "but".'},
+    {id:'p5', bg:null, ins:'Section 1 Review Quiz\n1. Where do you put your money? (a. Hotel, b. Bank)\n2. Where do you buy stamps? (a. Post office, b. Hospital)\n3. What is the opposite of closed? (a. Open, b. Busy)'}
+  ]
+};
+
+let S={pages:T.pages, cur:0, view:0}, my={ans:{}, sub:{}};
+
+function renderTeacher(){
+  const p=T.pages[T.cur];
+  $('#tCount').textContent=`Page ${T.cur+1} of ${T.pages.length}`;
+  $('#tPrev').disabled=T.cur===0; $('#tNext').disabled=T.cur===T.pages.length-1;
+  $('#tWs').innerHTML=p.bg?`<img src="${p.bg}" class="max-h-60 mx-auto rounded">`:`<div class="whitespace-pre-wrap font-medium">${esc(p.ins)}</div>`;
+  $('#tIns').value=p.ins||'';
+  $('#tOpen').textContent=T.open?'Room is open (Click to close)':'Open room to students';
+  $('#tStrip').innerHTML=T.pages.map((_,i)=>`<button class="btn chip ${i===T.cur?'btn-p':''}" onclick="goto(${i})">P${i+1}</button>`).join('');
+  
+  const list=Object.entries(T.students);
+  $('#tGrid').innerHTML=list.length?list.map(([id,s])=>`<div class="card p-2 text-sm"><b>${esc(s.name)}</b><p class="mt-1">${esc((s.ans||{})[p.id]||'No answer yet')}</p></div>`).join(''):`<p class="text-sm" style="color:var(--mute)">Students will appear here when they type.</p>`;
+}
+
+window.goto=i=>{T.cur=i;renderTeacher()};
+$('#tPrev').onclick=()=>goto(T.cur-1);
+$('#tNext').onclick=()=>goto(T.cur+1);
+$('#tAdd').onclick=()=>{T.pages.push({id:uid(),bg:null,ins:'New activity'});goto(T.pages.length-1)};
+$('#tDel').onclick=()=>{if(T.pages.length>1){T.pages.splice(T.cur,1);T.cur=Math.min(T.cur,T.pages.length-1);renderTeacher()}};
+$('#tIns').oninput=e=>{T.pages[T.cur].ins=e.target.value;renderTeacher()};
+$('#tOpen').onclick=()=>{T.open=!T.open;renderTeacher();toast(T.open?'Room opened!':'Room closed.')};
+$('#tClear').onclick=()=>{const pid=T.pages[T.cur].id;Object.values(T.students).forEach(s=>{if(s.ans)delete s.ans[pid]});renderTeacher();toast('Cleared')};
+
+$('#tFile').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const fr=new FileReader();
+  fr.onload=()=>{T.pages[T.cur].bg=fr.result;renderTeacher();toast('Uploaded!')};
+  fr.readAsDataURL(f);
+  e.target.value='';
+};
+
+function renderStudent(){
+  const has=T.open&&S.pages.length>0;
+  $('#sWait').classList.toggle('hidden',has);
+  $('#sBody').classList.toggle('hidden',!has);
+  if(!has)return;
+  const p=S.pages[S.view]||S.pages[0];
+  $('#sTabs').innerHTML=S.pages.map((_,i)=>`<button class="btn ${i===S.view?'btn-p':''}" onclick="setSView(${i})">Page ${i+1}</button>`).join('');
+  $('#sWs').innerHTML=p.bg?`<img src="${p.bg}" class="max-h-72 mx-auto rounded">`:`<div class="whitespace-pre-wrap font-medium">${esc(p.ins)}</div>`;
+  if($('#sAns').value!==my.ans[p.id]) $('#sAns').value=my.ans[p.id]||'';
+  const sub=!!my.sub[p.id];
+  $('#sSubmit').classList.toggle('hidden',sub);
+  $('#sEdit').classList.toggle('hidden',!sub);
+  $('#sAns').readOnly=sub;
+  $('#sMode').className='mode '+(sub?'done':'draft');
+  $('#sMode').textContent=sub?'Submitted':'Draft';
+}
+
+window.setSView=i=>{S.view=i;renderStudent()};
+$('#sAns').oninput=e=>{const pid=S.pages[S.view].id;my.ans[pid]=e.target.value;if(myName){T.students[sid]=T.students[sid]||{name:myName,ans:{}};T.students[sid].ans[pid]=e.target.value;if(role==='teacher')renderTeacher();}};
+$('#sSubmit').onclick=()=>{const pid=S.pages[S.view].id;if(!my.ans[pid]){toast('Write an answer first');return}my.sub[pid]=true;renderStudent();toast('Submitted!')};
+$('#sEdit').onclick=()=>{const pid=S.pages[S.view].id;my.sub[pid]=false;renderStudent();$('#sAns').focus()};
+
+$('#roleT').onclick=()=>{role='teacher';$('#teacher').classList.remove('hidden');$('#student').classList.add('hidden');$('#roleT').classList.add('btn-p');$('#roleS').classList.remove('btn-p');renderTeacher()};
+$('#roleS').onclick=()=>{role='student';$('#teacher').classList.add('hidden');$('#student').classList.remove('hidden');$('#roleS').classList.add('btn-p');$('#roleT').classList.remove('btn-p');if(!myName){$('#joinModal').classList.remove('hidden')}else{renderStudent()}};
+$('#shareBtn').onclick=async()=>{await navigator.clipboard.writeText(location.href);toast('Link copied!')};
+
+$('#joinBtn').onclick=()=>{
+  myName=$('#joinName').value.trim();const code=$('#joinRoom').value.trim();
+  if(!myName||!code)return;
+  sid='s-'+myName.toLowerCase();
+  localStorage.setItem('lw_name',myName);
+  $('#joinModal').classList.add('hidden');
+  renderStudent();
+};
+
+// Initial state
+$('#roomCode').textContent=RM.code;
+renderTeacher();
+</script>
+</body>
+</html>
