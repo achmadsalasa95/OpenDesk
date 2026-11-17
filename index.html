@@ -3,217 +3,898 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Opendesk Live Workbook</title>
+<title>Live Workbook</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📓%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Patrick+Hand&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
 <style>
-:root{--page:#fbe8a0;--rule:#e2c76c;--margin:#e48f80;--card:#fffbe3;--ink:#2f2a1c;--mute:#6b6040;--line:#b8a768;--pencil:#3b362a;--hl:#ffd84d;--acc:#8a6100;--danger:#b3261e;--edit-bg:#c9e6ff;--edit-ink:#0f2a44;--cover:#6b4a2b}
-body{margin:0;font-family:'Patrick Hand','Segoe Print',sans-serif;font-size:1.08rem;color:var(--ink);min-height:100vh;background-color:var(--page);
+:root{--page:#fbe8a0;--rule:#e2c76c;--margin:#e48f80;--card:#fffbe3;--ink:#2f2a1c;--mute:#6b6040;--line:#b8a768;--pencil:#3b362a;--hl:#ffd84d;--acc:#8a6100;--danger:#b3261e;--edit-bg:#c9e6ff;--edit-ink:#0f2a44;--cover:#6b4a2b;--surface:var(--card);--bg:var(--page);
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--page:#2a2412;--rule:#40381c;--margin:#8a4a40;--card:#3a331b;--ink:#f4e9bd;--mute:#c9bc88;--line:#6b5f33;--pencil:#e6d9a6;--acc:#ffd84d;--danger:#ff8a80;--edit-bg:#274763;--edit-ink:#dcefff;--cover:#4a3320;color-scheme:dark}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;font-family:'Patrick Hand','Segoe Print','Comic Sans MS',system-ui,sans-serif;font-size:1.08rem;color:var(--ink);min-height:100vh;background-color:var(--page);
 background-image:linear-gradient(90deg,transparent 3.2rem,var(--margin) 3.2rem,var(--margin) calc(3.2rem + 2px),transparent calc(3.2rem + 2px)),repeating-linear-gradient(to bottom,transparent 0,transparent 1.9rem,var(--rule) 1.9rem,var(--rule) calc(1.9rem + 1px))}
 h2{font-family:'Caveat','Patrick Hand',cursive!important;font-size:1.75rem!important;line-height:1.1!important;font-weight:700!important}
-body>header{background:var(--cover);color:#fff3b8;border-bottom:4px double #2b1c0e;box-shadow:0 3px 0 rgba(0,0,0,.2)}
-.brand{font-family:'Caveat',cursive;font-size:2rem;font-weight:700;color:#fff3b8}
+body>header{position:relative;z-index:60;background:var(--cover);color:#fff3b8;border-bottom:4px double #2b1c0e;box-shadow:0 3px 0 rgba(0,0,0,.2)}
+body>header span,body>header b{color:#fff3b8!important}
+body>header #netStat{border-color:#fff3b8!important}
+.brand{font-family:'Caveat',cursive;font-size:2rem;font-weight:700;line-height:1;color:#fff3b8}
 .card{background:var(--card);color:var(--ink);border:2px solid var(--pencil);border-radius:6px 16px 8px 14px;box-shadow:3px 4px 0 rgba(60,45,10,.22)}
-.btn{font:inherit;font-size:1rem;padding:.35rem .85rem;border:2px solid var(--pencil);border-radius:8px 14px 9px 13px;background:var(--card);color:var(--ink);cursor:pointer;box-shadow:2px 3px 0 rgba(60,45,10,.28)}
+.btn{font:inherit;font-size:1rem;padding:.35rem .85rem;border:2px solid var(--pencil);border-radius:8px 14px 9px 13px;background:var(--card);color:var(--ink);cursor:pointer;box-shadow:2px 3px 0 rgba(60,45,10,.28);transition:transform .08s,box-shadow .08s}
 .btn:hover:not(:disabled){transform:translate(-1px,-1px);box-shadow:3px 4px 0 rgba(60,45,10,.3)}
+.btn:active:not(:disabled){transform:translate(1px,1px);box-shadow:none}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,.tog:focus-visible,.field:focus-visible,.seg button:focus-visible,#splitBar:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 .btn-p{background:var(--hl);color:#2f2a1c;font-weight:700}
 .btn-d{color:var(--danger)}
+.btn-edit{background:var(--edit-bg);color:var(--edit-ink);font-weight:700}
+.tog{font:inherit;font-size:1rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;width:100%;padding:.45rem .7rem;border:2px solid var(--pencil);border-radius:8px 14px 9px 13px;background:var(--card);color:var(--ink);cursor:pointer;text-align:left;box-shadow:2px 3px 0 rgba(60,45,10,.28)}
+.tog i{width:38px;height:22px;border-radius:99px;border:2px solid var(--pencil);background:var(--card);position:relative;flex:none;transition:background .15s}
+.tog i::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--pencil);transition:transform .15s}
+.tog[aria-pressed="true"] i{background:var(--hl)}
+.tog[aria-pressed="true"] i::after{transform:translateX(16px)}
 .field{width:100%;font:inherit;padding:.45rem .7rem;border:2px solid var(--pencil);border-radius:5px 11px 6px 10px;background:var(--card);color:var(--ink)}
-textarea.field{line-height:1.9rem;padding:0 .7rem;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(1.9rem - 1px),var(--rule) calc(1.9rem - 1px),var(--rule) 1.9rem)}
+textarea.field{line-height:1.9rem;padding:0 .7rem 0 2.6rem;background-attachment:local;
+background-image:linear-gradient(90deg,transparent 2rem,var(--margin) 2rem,var(--margin) calc(2rem + 2px),transparent calc(2rem + 2px)),repeating-linear-gradient(to bottom,transparent 0,transparent calc(1.9rem - 1px),var(--rule) calc(1.9rem - 1px),var(--rule) 1.9rem)}
+textarea.field[readonly]{opacity:.7;border-style:dashed}
+.field::placeholder{color:var(--mute);opacity:.8}
+.seg{display:flex;gap:2px;padding:3px;border:2px solid var(--pencil);border-radius:12px;background:var(--card)}
+.seg button{font:inherit;font-size:1rem;padding:.25rem .85rem;border:0;background:transparent;color:var(--mute);cursor:pointer;border-radius:8px}
+.seg button[aria-pressed="true"]{background:var(--hl);color:#2f2a1c;font-weight:700}
+.hl{background:var(--hl);color:#2f2a1c;border-radius:4px;padding:0 .4rem;font-weight:700;font-size:.85rem}
 .lbl{font-size:1rem;font-weight:700;color:var(--mute);margin-bottom:.3rem}
 .mode{display:inline-block;padding:.1rem .8rem;border:2px solid var(--pencil);border-radius:99px;font-weight:700;font-size:1rem}
 .mode.draft{background:var(--hl);color:#2f2a1c}
 .mode.done{background:#a5d6a7;color:#12331a}
-.ws{background:#fffbe0;border:2px dashed var(--pencil);border-radius:8px;padding:1rem;min-height:280px}
-.chip{padding:.1rem .55rem;min-width:2.2rem;cursor:pointer}
+.timer{font-family:'Caveat',cursive;font-size:1.9rem;font-weight:700;line-height:1.2;padding:0 1rem;border:3px solid #fff3b8;border-radius:12px;color:#fff3b8;background:rgba(0,0,0,.22);min-width:6rem;text-align:center}
+.timer.low,.timer.done{background:#b3261e}
+.timer.low{animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.6}}
+.ws img{display:block;width:100%;height:auto;border-radius:6px;border:2px solid var(--pencil)}
+img.rounded{background:#fffbe0}
 .dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:var(--line)}
 .dot.on{background:#2e9e5b}
+@media(min-width:1024px){#sAnsWrap{position:sticky;top:1rem;max-height:calc(100vh - 2rem);overflow:auto}}
+@media(max-width:1023px){#sAnsWrap{position:sticky;bottom:.5rem;z-index:20;max-height:55vh;overflow:auto}}
+#student{-webkit-user-select:none;user-select:none}
+#student textarea{-webkit-user-select:text;user-select:text}
+.chip{padding:.1rem .55rem;min-width:2.2rem;cursor:grab}
+.chip.over,.dropping{outline:3px dashed var(--acc);outline-offset:-6px}
+#paneA.dropping{outline-offset:-8px}
+.qopt{display:flex;align-items:center;gap:.75rem;padding:1rem;border-radius:10px;color:#fff;font:inherit;font-weight:700;font-size:1.25rem;border:3px solid var(--pencil);box-shadow:3px 4px 0 rgba(0,0,0,.25);text-align:left;width:100%}
+button.qopt{cursor:pointer}
+button.qopt:active{transform:translate(1px,1px);box-shadow:none}
+.qopt.dim{opacity:.3}
+#split{height:max(420px,calc(100vh - var(--hdr,4.5rem) - 2rem))}
+#split{height:max(420px,calc(100dvh - var(--hdr,4.5rem) - 2rem))}
+#splitBar{height:14px;flex:none;cursor:row-resize;display:flex;align-items:center;justify-content:center;touch-action:none;border-radius:6px}
+#splitBar span{width:56px;height:5px;border-radius:4px;background:var(--pencil);opacity:.5;transition:opacity .15s}
+#splitBar:hover span,#splitBar:focus-visible span,#splitBar.drag span{opacity:1}
+body.dragging{cursor:row-resize;user-select:none}
+canvas{touch-action:none;width:100%;background:#fffbe0;border:2px dashed var(--pencil);border-radius:8px;cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26'%3E%3Cpath d='M3 23l2-7L17 4l5 5L10 21z' fill='%23f2b705' stroke='%23333' stroke-width='1.6'/%3E%3C/svg%3E") 3 23,crosshair}
 </style>
 </head>
-<body class="flex flex-col min-h-screen">
+<body>
 <header class="flex flex-wrap items-center gap-3 justify-between px-4 py-3">
   <div class="flex items-center gap-3">
-    <span class="brand">✏️ Opendesk</span>
-    <span class="text-sm" style="color:#fff3b8">Room <b id="roomCode">—</b></span>
-    <span id="netStat" class="text-xs px-2 py-1 rounded" style="border:1px solid #fff3b8">Offline</span>
+    <span class="brand">✏️ Live Workbook</span>
+    <span class="text-sm" style="color:var(--mute)">Room <b id="roomCode" style="color:var(--ink)">—</b></span>
+    <span id="netStat" class="text-xs px-2 py-1 rounded" style="border:1px solid var(--line);color:var(--mute)">Not connected</span>
   </div>
+  <div id="timerBox" class="timer hidden" role="timer"></div>
   <div class="flex items-center gap-3">
+    <button class="btn hidden" id="libBtn">Library</button>
     <button class="btn" id="shareBtn">Copy room link</button>
-    <div class="flex gap-1" id="roleSeg">
-      <button class="btn btn-p" id="roleT">Teacher mode</button>
-      <button class="btn" id="roleS">Student mode</button>
+    <div class="seg" id="roleSeg" role="group" aria-label="Switch role">
+      <button id="roleT" aria-pressed="true">Teacher mode</button>
+      <button id="roleS" aria-pressed="false">Student mode</button>
     </div>
   </div>
 </header>
 
+<!-- LIBRARY -->
+<main id="home" class="hidden p-4 max-w-4xl mx-auto"></main>
+
+<!-- QUIZ HOST -->
+<main id="tQuizView" class="hidden p-4 max-w-5xl mx-auto space-y-4">
+  <div class="card p-4">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div><h2 id="qvTitle"></h2><div id="qvMeta" class="text-sm" style="color:var(--mute)"></div></div>
+      <div class="flex flex-wrap items-center gap-2" id="qvCtl"></div>
+    </div>
+    <div id="qvBody" class="mt-3"></div>
+  </div>
+  <div id="qvBoard" class="card p-4 hidden"></div>
+</main>
+
 <!-- TEACHER -->
-<main id="teacher" class="grid gap-4 p-4 lg:grid-cols-[320px_1fr] max-w-[1400px] mx-auto w-full flex-grow">
+<main id="teacher" class="grid gap-4 p-4 lg:grid-cols-[320px_1fr] max-w-[1400px] mx-auto">
   <aside class="space-y-4">
     <section class="card p-3">
-      <button class="btn w-full btn-p" id="tOpen">Open room to students</button>
-      <p id="tOpenHint" class="text-xs mt-2" style="color:var(--mute)">Room is currently closed.</p>
+      <button class="tog" id="tOpen" aria-pressed="false"><span id="tOpenTxt">Open room to students</span><i></i></button>
+      <p id="tOpenHint" class="text-xs mt-2" style="color:var(--mute)"></p>
     </section>
     <section class="card p-3">
-      <div class="lbl">Preloaded Chapter 4 Activities</div>
+      <div class="lbl">Timer (optional)</div>
+      <div class="flex items-center gap-2">
+        <input id="tMin" type="number" min="1" max="180" value="5" class="field" style="width:4.5rem" aria-label="Minutes">
+        <span class="text-sm">min</span>
+        <button class="btn btn-p flex-1" id="tStart">Start timer</button>
+        <button class="btn" id="tStop">Clear</button>
+      </div>
+      <p class="text-xs mt-2" style="color:var(--mute)">Everyone in the room sees the countdown at the top of the page.</p>
+    </section>
+    <section class="card p-3">
+      <div class="lbl">Pages</div>
       <div class="flex items-center justify-between gap-2">
-        <button class="btn" id="tPrev">Prev</button>
-        <b id="tCount" class="text-sm">Page 1 of 5</b>
-        <button class="btn" id="tNext">Next</button>
+        <button class="btn" id="tPrev">Previous page</button>
+        <b id="tCount" class="text-sm whitespace-nowrap">Page 1 of 1</b>
+        <button class="btn" id="tNext">Next page</button>
       </div>
       <div id="tStrip" class="flex flex-wrap gap-1 mt-3"></div>
       <div class="flex gap-2 mt-2">
         <button class="btn btn-p flex-1" id="tAdd">+ Add page</button>
-        <button class="btn btn-d flex-1" id="tDel">Delete</button>
+        <button class="btn btn-d flex-1" id="tDel">Delete page</button>
       </div>
-      <label class="lbl block mt-3" for="tFile">Upload Custom Image/PDF</label>
+      <label class="lbl block mt-3" for="tFile">Upload Activity File</label>
       <input id="tFile" type="file" accept="application/pdf,image/png,image/jpeg" class="field text-sm">
+      <p id="tUpStatus" class="text-xs mt-1" style="color:var(--mute)">PDF or PNG/JPG. A multi-page PDF fills this page and adds the rest after it.</p>
+      <p class="text-xs mt-3" style="color:var(--mute)">Tip: drag a PDF or image onto the worksheet to load it. Drag the numbered page buttons to reorder pages, or drop a file onto one to fill that page.</p>
     </section>
+
     <section class="card p-3 space-y-2">
       <div class="lbl">Class controls</div>
-      <button class="btn w-full btn-d" id="tClear">Clear answers on this page</button>
-      <button class="btn w-full" id="tAnon">Toggle student names</button>
-      <button class="btn w-full" id="tReveal">Toggle reveal answers</button>
+      <button class="btn w-full btn-d" id="tClear">Clear all answers on this page</button>
+      <button class="tog" id="tAnon" aria-pressed="false"><span id="tAnonTxt">Show student names</span><i></i></button>
+      <button class="tog" id="tReveal" aria-pressed="false"><span>Reveal answers to students</span><i></i></button>
     </section>
+
   </aside>
 
-  <section class="grid grid-rows-[auto_1fr] gap-4 min-w-0">
-    <div class="card p-3">
-      <div class="lbl">Worksheet View</div>
-      <div id="tWs" class="ws mb-3"></div>
-      <label class="lbl block" for="tIns">Activity Instructions & Questions</label>
-      <textarea id="tIns" rows="4" class="field"></textarea>
+  <section id="split" class="min-w-0 flex flex-col">
+    <div id="paneA" class="card p-3 overflow-auto">
+      <div class="lbl">Worksheet for this page</div>
+      <div id="tWs" class="ws"></div>
+      <label class="lbl block mt-3" for="tIns">Questions and instructions</label>
+      <textarea id="tIns" rows="5" class="field" placeholder="Type your questions or instructions, one per line"></textarea>
+      
     </div>
-    <div class="card p-3 overflow-auto">
-      <h2 class="font-semibold mb-2">Student answers on this page</h2>
+    <div id="splitBar" role="separator" aria-orientation="horizontal" aria-label="Drag to resize activity and answers" title="Drag to resize. Double-click to reset." tabindex="0"><span></span></div>
+    <div id="paneB" class="overflow-auto flex-1 min-h-0">
+      <div class="flex items-baseline justify-between mb-2">
+        <h2 class="font-semibold">Student answers on this page</h2>
+        <div class="flex items-center gap-3"><span class="text-sm" id="tGridHint" style="color:var(--mute)"></span><button class="btn" id="tFocus">Expand answers</button></div>
+      </div>
       <div id="tGrid" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"></div>
     </div>
   </section>
 </main>
 
 <!-- STUDENT -->
-<main id="student" class="hidden p-4 max-w-6xl mx-auto space-y-4 w-full flex-grow">
-  <div id="sWait" class="card p-8 text-center text-lg" style="color:var(--mute)">Waiting for your teacher to open this room…</div>
+<main id="student" class="hidden p-4 max-w-6xl mx-auto space-y-4">
+  <div id="sMsg" class="hidden card p-3" style="border-color:var(--acc)"></div>
+  <div id="sWait" class="card p-6 text-center" style="color:var(--mute)"><span id="sWaitTxt">Waiting for your teacher to open this room…</span></div>
+  <div id="sQuiz" class="hidden space-y-4"></div>
   <div id="sBody" class="hidden space-y-4">
     <div class="flex flex-wrap items-center gap-2" id="sTabs"></div>
+    <div id="sBack" class="hidden card p-2 px-3 text-sm flex items-center justify-between">
+      <span>You’re viewing an earlier page.</span><button class="btn" id="sBackBtn">Go to live page</button>
+    </div>
     <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px] items-start">
-      <div class="card p-3">
+      <div class="card p-3 min-w-0">
         <div id="sWs" class="ws"></div>
+        <p id="sIns" class="mt-3 whitespace-pre-wrap"></p>
       </div>
-      <div class="card p-3 space-y-3">
-        <div class="flex items-center justify-between"><label class="lbl" for="sAns">Your answer</label><span id="sMode" class="mode draft">Draft</span></div>
-        <textarea id="sAns" rows="8" class="field" placeholder="Type your answer here independently..."></textarea>
-        <button class="btn btn-p w-full" id="sSubmit">✔ Submit answer</button>
-        <button class="btn w-full hidden" id="sEdit">✏ Edit answer</button>
+      <div id="sAnsWrap" class="space-y-4">
+        <div class="card p-3">
+          <div class="flex items-center justify-between gap-2 flex-wrap mb-1"><label class="lbl" style="margin:0" for="sAns">Your answer</label><span id="sMode" class="mode draft">✏ Draft · editing</span></div>
+          <textarea id="sAns" rows="8" class="field" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-gramm="false" placeholder="Type your answer here. Pasting is turned off. Only your teacher can see it."></textarea>
+          <div class="flex flex-wrap items-center gap-3 mt-3">
+            <button class="btn btn-p" id="sSubmit">✔ Submit answer</button>
+            <button class="btn btn-edit hidden" id="sEdit">✏ Edit answer</button>
+            <span id="sSubStatus" class="text-sm" style="color:var(--mute)"></span>
+          </div>
+        </div>
+        <div id="sShared" class="hidden card p-3">
+          <div class="lbl">Class answers shared by your teacher</div>
+          <div id="sSharedList" class="grid gap-3"></div>
+        </div>
       </div>
     </div>
   </div>
 </main>
 
-<!-- Modals -->
-<div id="joinModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(10,16,34,.6)">
+<!-- Role chooser -->
+<div id="roleModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(10,16,34,.6)">
   <div class="card p-5 w-full max-w-sm">
-    <h2 class="text-lg font-bold mb-1">Join class</h2>
-    <label class="lbl block" for="joinRoom">Room code</label>
-    <input id="joinRoom" class="field mb-3" style="text-transform:uppercase">
-    <label class="lbl block" for="joinName">Your name</label>
-    <input id="joinName" class="field mb-3">
-    <button class="btn btn-p w-full" id="joinBtn">Join</button>
+    <h2 class="text-lg font-bold mb-1">Welcome to Live Workbook</h2>
+    <p class="text-sm mb-4" style="color:var(--mute)">Who’s joining?</p>
+    <div class="grid gap-2"><button class="btn btn-p" id="pickT">I’m a teacher</button><button class="btn" id="pickS">I’m a student</button></div>
   </div>
 </div>
 
-<div id="toast" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded text-sm bg-black text-white z-60"></div>
+<!-- Join modal -->
+<div id="joinModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(10,16,34,.6)">
+  <div class="card p-5 w-full max-w-sm">
+    <h2 class="text-lg font-bold mb-1">Join the class</h2>
+    <p class="text-sm mb-3" style="color:var(--mute)">Enter the name your teacher will see.</p>
+    <label class="lbl block" for="joinRoom">Room code</label>
+    <input id="joinRoom" class="field mb-3" maxlength="40" autocomplete="off" style="text-transform:uppercase">
+    <label class="lbl block" for="joinName">Display name</label>
+    <input id="joinName" class="field mb-3" maxlength="30" autocomplete="nickname">
+    <button class="btn btn-p w-full" id="joinBtn">Join class</button>
+  </div>
+</div>
+
+<!-- Teacher login -->
+<div id="tlModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(10,16,34,.6)">
+  <div class="card p-5 w-full max-w-sm">
+    <h2 class="mb-1">Welcome, teacher</h2>
+    <p class="text-sm mb-3" style="color:var(--mute)">Just your name. No account or password.</p>
+    <label class="lbl block" for="tlName">Your name</label>
+    <input id="tlName" class="field mb-3" maxlength="30" autocomplete="name">
+    <p id="tlErr" class="text-sm mb-2" style="color:var(--danger)"></p>
+    <div class="grid gap-2">
+      <button class="btn btn-p hidden" id="tlCont">Continue my room <b id="tlContCode"></b></button>
+      <button class="btn" id="tlNew">Start a new room</button>
+      <button class="btn" id="tlBack">Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- Kicked -->
+<div id="kickModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(10,16,34,.6)">
+  <div class="card p-5 w-full max-w-sm">
+    <h2 class="text-lg font-bold mb-1">You were removed from the room</h2>
+    <p class="text-sm mb-3" style="color:var(--mute)">Your teacher removed you. You can rejoin if this was a mistake.</p>
+    <button class="btn btn-p w-full" id="rejoinBtn">Rejoin class</button>
+    <button class="btn w-full mt-2 hidden" id="kickBack">Back to teacher mode</button>
+  </div>
+</div>
+
+<!-- Student detail -->
+<div id="stModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(10,16,34,.6)">
+  <div class="card p-5 w-full max-w-2xl flex flex-col" style="max-height:88vh">
+    <div class="flex items-start justify-between gap-3 mb-3">
+      <div><h2 id="stName"></h2><div id="stMeta" class="text-sm" style="color:var(--mute)"></div></div>
+      <button class="btn" id="stClose">Close</button>
+    </div>
+    <div id="stBody" class="overflow-auto space-y-4" style="flex:1 1 auto"></div>
+    <div id="stActs" class="flex flex-wrap gap-2 mt-4 pt-3" style="border-top:2px dashed var(--line)"></div>
+  </div>
+</div>
+
+<!-- Message modal -->
+<div id="msgModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(10,16,34,.6)">
+  <div class="card p-5 w-full max-w-sm">
+    <h2 class="text-lg font-bold mb-2">Private message to <span id="msgTo"></span></h2>
+    <textarea id="msgText" rows="3" class="field mb-3" placeholder="Write a short note"></textarea>
+    <div class="flex gap-2 justify-end"><button class="btn" id="msgCancel">Cancel</button><button class="btn btn-p" id="msgSend">Send message</button></div>
+  </div>
+</div>
+
+<div id="toast" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg text-sm" style="background:var(--ink);color:var(--bg);z-index:60"></div>
 
 <script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const uid=()=>Math.random().toString(36).slice(2,9);
-const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.remove('hidden');setTimeout(()=>t.classList.add('hidden'),3000)};
+/* ================= SUPABASE TRANSPORT (replaces tab/room sync) ================= */
+const QUIZ={"a2c4s1":{"title":"Section 1 Review Quiz","questions":[{"q":"Where do you put your money?","o":["The hotel","The bank","The museum","The park"],"c":1},{"q":"Where do you buy stamps?","o":["The hospital","The post office","The college","The building"],"c":1},{"q":"Which place is a large area with many houses?","o":["Downtown","The playground","The map","The neighborhood"],"c":3},{"q":"Where can you buy a book?","o":["The bookstore","The gas station","The police station","The church"],"c":0},{"q":"What do you use to find a street?","o":["The map","The pool","The building","The hospital"],"c":0},{"q":"Which word means there is a lot of sound?","o":["Busy","Closed","Noisy","Open"],"c":2},{"q":"Where do you go when you are sick?","o":["The museum","The post office","The hospital","The bank"],"c":2},{"q":"Where are the police?","o":["The fire station","The police station","The college","The playground"],"c":1},{"q":"Who helps when there is a fire?","o":["The university","The neighborhood","The hotel","The fire department"],"c":3},{"q":"Where do you sleep on vacation?","o":["The church","The hotel","The building","The park"],"c":1},{"q":"What is a tall structure with floors?","o":["The building","Downtown","The map","The neighborhood"],"c":0},{"q":"Which word is the opposite of closed?","o":["Busy","Noisy","Open","To close"],"c":2},{"q":"Where do young adults go to study?","o":["The university","The playground","The bank","The gas station"],"c":0},{"q":"Which area has the most tall buildings and shops?","o":["The park","The church","Downtown","The neighborhood"],"c":2},{"q":"If a store is not open, it is...","o":["Closed","Noisy","Busy","Open"],"c":0},{"q":"Where can you swim?","o":["The post office","The swimming pool","The museum","The building"],"c":1},{"q":"Where do children play outside?","o":["The bank","The hospital","The playground","The police station"],"c":2},{"q":"What is a beautiful area with grass and trees?","o":["The park","Downtown","The gas station","The map"],"c":0},{"q":"Where do you get gas for a car?","o":["The hotel","The gas station","The post office","The fire station"],"c":1},{"q":"If there are too many cars and people, the city is...","o":["Open","Closed","Busy","Noisy"],"c":2},{"q":"What is a place where you look at old art and history?","o":["The pool","The neighborhood","The college","The museum"],"c":3},{"q":"What is another word for a cathedral?","o":["The hospital","The building","The university","The church"],"c":3},{"q":"What do you call the people and houses around where you live?","o":["The neighborhood","Downtown","The park","The playground"],"c":0},{"q":"What do we look at to not get lost?","o":["The bookshop","The map","The bank","The post office"],"c":1},{"q":"Where do you find a doctor?","o":["The hospital","The police station","The fire department","The museum"],"c":0},{"q":"Where do you buy a magazine to read?","o":["The church","The gas station","The hotel","The bookshop"],"c":3},{"q":"If a street has a lot of loud cars, it is...","o":["Noisy","Open","Busy","Closed"],"c":0},{"q":"Where do firefighters work?","o":["The fire station","The police station","The bank","The building"],"c":0},{"q":"What place has water for summer fun?","o":["The park","The swimming pool","The neighborhood","The playground"],"c":1},{"q":"What do we call the center of the city?","o":["The map","Downtown","The university","The college"],"c":1}]},"a2c4s2":{"title":"Section 2 Review Quiz","questions":[{"q":"I do not know where I am. I am ____.","o":["left","lost","bridge","drove"],"c":1},{"q":"When you are lost, you should ____.","o":["ask for directions","the block","to the east","drove"],"c":0},{"q":"The best question to ask is: “____ the hospital?”","o":["How do I get to","To the north","On the right side","To take a right"],"c":0},{"q":"The opposite of right is ____.","o":["north","cross","left","block"],"c":2},{"q":"Please ____ at the traffic light.","o":["to the east","take a left","lost","bridge"],"c":1},{"q":"You need to ____ to find the store.","o":["the corner","go right","to the south","drove"],"c":1},{"q":"The opposite of south is ____.","o":["east","north","west","left"],"c":1},{"q":"The sun comes up ____.","o":["to the east","to the north","to the west","to the south"],"c":0},{"q":"Drive straight ____.","o":["to the corner","to the north","on the left side","the bridge"],"c":1},{"q":"Walk around ____ to find the café.","o":["the block","drove","ask for directions","north"],"c":0},{"q":"A block is made of many ____.","o":["rivers","lefts","buildings","compasses"],"c":2},{"q":"Walk one ____ and turn left.","o":["block","to be lost","cross","drove"],"c":0},{"q":"Look both ways before you ____ the street.","o":["cross","drive","ask","right"],"c":0},{"q":"Yesterday, I ____ my car to work.","o":["cross","drive","drove","bridge"],"c":2},{"q":"It is faster to ____ than to walk.","o":["be lost","drive","the corner","south"],"c":1},{"q":"The bank is ____.","o":["on the left side","to take a left","to go right","left"],"c":0},{"q":"The hospital is ____.","o":["on the right side","right","to go left","to cross"],"c":0},{"q":"I want to ____ here.","o":["take a right","the block","on the left side","east"],"c":0},{"q":"We need to cross ____.","o":["the corner","the bridge","the block","the south"],"c":1},{"q":"The car goes over ____.","o":["the bridge","the corner","the left side","drove"],"c":0},{"q":"A bridge goes over a ____.","o":["building","street or river","right","compass"],"c":1},{"q":"Turn right at ____.","o":["the corner","the north","to be lost","the block"],"c":0},{"q":"Meet me at ____ of 1st Street and Main Street.","o":["the bridge","the block","the corner","the east"],"c":2},{"q":"The stop sign is on ____.","o":["the bridge","the corner","drove","to go left"],"c":1},{"q":"She did not know the way, so she was ____.","o":["cross","lost","left","corner"],"c":1},{"q":"He ____ to the store yesterday.","o":["drive","drove","cross","south"],"c":1},{"q":"They ____ because they didn’t have a map.","o":["are lost","drove","cross","right"],"c":0},{"q":"“____ get to the park?”","o":["How do I","To the","On the","Ask for"],"c":0},{"q":"First, walk one ____.","o":["block","cross","drove","left"],"c":0},{"q":"Then, ____ and it is on the left side.","o":["take a right","corner","bridge","north"],"c":0}]},"a2c4s3":{"title":"Section 3 Review Quiz","questions":[{"q":"I need to go underground to ride the ____.","o":["car","bus","subway","taxi"],"c":2},{"q":"You wait for the bus at the bus ____.","o":["station","stop","garage","ticket"],"c":1},{"q":"I drive my ____ to work every day.","o":["train","car","subway","block"],"c":1},{"q":"A large place where many trains arrive and leave is the train ____.","o":["corner","station","bridge","sign"],"c":1},{"q":"A short stop for a train is called a train ____.","o":["stop","lot","garage","road"],"c":0},{"q":"To travel over a river, you drive on a ____.","o":["block","bridge","roundabout","corner"],"c":1},{"q":"Cars drive on the ____.","o":["subway","block","road","train"],"c":2},{"q":"You must stop your car at a red ____.","o":["traffic light","price","block","entrance"],"c":0},{"q":"A circle in the road where cars drive around is a ____.","o":["corner","bridge","street sign","roundabout"],"c":3},{"q":"A building where you pay to leave your car is a parking ____.","o":["lot","stop","garage","station"],"c":2},{"q":"When there are too many cars on the street, there is bad ____.","o":["traffic","price","block","bridge"],"c":0},{"q":"You must pay the ____ to ride the bus.","o":["sign","entrance","price","exit"],"c":2},{"q":"I do not have a car. I will ____ to the store.","o":["park","drive","walk","break down"],"c":2},{"q":"The boy ____ fast to catch the bus.","o":["ran","parked","drove","walked"],"c":0},{"q":"You need to ____ the street at the stop sign.","o":["enter","cross","get off","exit"],"c":1},{"q":"Yesterday, I ____ my car to the city.","o":["walk","drove","turn","run"],"c":1},{"q":"Oh no! My car will not start. It ____.","o":["broke down","got on","crossed","looked out"],"c":0},{"q":"When you leave a building, you go through the ____.","o":["entrance","exit","stop","corner"],"c":1},{"q":"I don’t know where I am. I am ____.","o":["straight","lost","carefully","left"],"c":1},{"q":"The four directions are North, South, East, and ____.","o":["Left","Right","West","Straight"],"c":2},{"q":"“Excuse me, can I ask for ____?”","o":["exits","directions","blocks","prices"],"c":1},{"q":"Go to the corner and take a ____.","o":["straight","left","light","past","across"],"c":1},{"q":"Don’t turn. Just go ____ ahead.","o":["straight","right","lost","east"],"c":0},{"q":"The grocery store is ____ the street from the bank.","o":["into","through","across","under"],"c":2},{"q":"We walked ____ the park to get home.","o":["through","on","at","into"],"c":0},{"q":"Please drive ____ in the rain.","o":["quickly","carefully","slowly","around"],"c":1},{"q":"We waited ____ the bus stop.","o":["at","in","on","through"],"c":0},{"q":"The turtle moves very ____.","o":["carefully","quickly","straight","slowly"],"c":3},{"q":"It is time to leave the train. We need to ____.","o":["get on","enter","get off","park"],"c":2},{"q":"“____ way do I go?”","o":["Where","How","Which","Who"],"c":2}]}};
+const rng=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
+const LIB=[{id:'a2c4',level:'A2',title:'Chapter 4: Around the city',sections:[
+  {id:'a2c4s1',title:'Section 1: Around the city',pages:rng(4,41),quiz:'a2c4s1'},
+  {id:'a2c4s2',title:'Section 2: Navigating the City',sub:'Vocabulary, Directions, and Getting Around.',pages:rng(52,77),quiz:'a2c4s2'},
+  {id:'a2c4s3',title:'Section 3: Around the city',sub:'Getting Around Town.',pages:rng(89,109),quiz:'a2c4s3'}]}];
+const imgSrc=b=>b&&b.startsWith('url:')?b.slice(4):b;
+const SB={url:'https://yivzqpevrcdazrgpfpas.supabase.co',key:'sb_publishable_nfyx78lzbJwqIBbMPGPUUQ_2n1GrjV-'};
+SB.url=SB.url.trim().replace(/\/rest\/v1\/?$/,'').replace(/\/+$/,'');
+let netId=null,netTimer=null,netBusy=false,tick=0,off=0;
+const srvNow=()=>Date.now()+off;
+let up={},lastSaved='',clr={},sq=Promise.resolve(),since=null,stRaw=null,stV=-1,imgs={},loading={},sharedC={},msgN=null,ansP={},ansT=null;
+async function rpc(fn,a){
+  const h={'Content-Type':'application/json',apikey:SB.key};if(SB.key.startsWith('eyJ'))h.Authorization='Bearer '+SB.key;
+  const r=await fetch(SB.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:h,body:JSON.stringify(a)});
+  const dh=r.headers.get('date');if(dh){const o=Date.parse(dh)-Date.now();if(!isNaN(o))off=o}
+  const t=await r.text();if(!r.ok)throw new Error(t);return t?JSON.parse(t):null;
+}
+async function sha(s){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return'x'+h}}
+const hsig=s=>{let h=0;for(let i=0;i<s.length;i+=997)h=(h*31+s.charCodeAt(i))|0;return s.length+'.'+h};
+const emit=m=>{if(ch.onmessage)ch.onmessage({data:m})};
+const queue=f=>{sq=sq.then(f).catch(e=>{console.error(e);setNet(false);if(role==='teacher')toast('Couldn’t save to the server. Check the setup steps.')})};
+const setWait=t=>{const e=document.querySelector('#sWaitTxt');if(e)e.textContent=t};
+const setNet=ok=>{const n=document.querySelector('#netStat');if(n&&!SB.url.includes('PASTE'))n.textContent=ok?'Live':'Reconnecting\u2026'};
+const ch={onmessage:null,postMessage(m){if(role==='teacher')teacherOut(m);else studentOut(m)}};
+async function syncClock(){try{const t=Date.now(),ms=await rpc('server_time',{});if(ms!=null&&!isNaN(+ms))off=+ms-(t+Date.now())/2}catch(e){}}
+function startNet(){netStop();tick=0;syncClock();const f=async()=>{if(netBusy)return;netBusy=true;tick++;try{await(role==='teacher'?teacherTick():studentTick())}finally{netBusy=false}};f();netTimer=setInterval(f,2000)}
+function netStop(){clearInterval(netTimer);netTimer=null}
 
-let role='teacher', RM={code:'CH4-1234',key:'k1'}, sid='s-student', myName='';
-let T={
-  open:true, cur:0, anon:false, reveal:false, students:{},
-  pages:[
-    {id:'p1', bg:null, ins:'Chapter 4: Around the City - Section 1 Vocabulary\nMatch or write descriptions for the city places:\n1. The Bank (Where your money is)\n2. The Hospital (Where you go when you are sick)\n3. The Post Office (Where you buy stamps)\n4. The Bookstore (Where you buy books & magazines)'},
-    {id:'p2', bg:null, ins:'Grammar: The Past Continuous\nRule: [Subject] + was/were + verb-ing\nExample: At nine o’clock yesterday morning, I was driving to the bank.\nTask: Write 3 sentences in the past continuous.'},
-    {id:'p3', bg:null, ins:'Reading & True/False Activity (City Scene)\nLook at your class slide and answer True (A) or False (B):\n1. An older woman was walking her dog.\n2. A woman was riding her bike in the street.'},
-    {id:'p4', bg:null, ins:'Coordinating Conjunctions: and, but, or, so\nExample: We are going to the museum, and then we are going for ice cream.\nTask: Write two sentences using "so" and two using "but".'},
-    {id:'p5', bg:null, ins:'Section 1 Review Quiz\n1. Where do you put your money? (a. Hotel, b. Bank)\n2. Where do you buy stamps? (a. Post office, b. Hospital)\n3. What is the opposite of closed? (a. Open, b. Busy)'}
-  ]
-};
-
-let S={pages:T.pages, cur:0, view:0}, my={ans:{}, sub:{}};
-
-function renderTeacher(){
-  const p=T.pages[T.cur];
-  $('#tCount').textContent=`Page ${T.cur+1} of ${T.pages.length}`;
-  $('#tPrev').disabled=T.cur===0; $('#tNext').disabled=T.cur===T.pages.length-1;
-  $('#tWs').innerHTML=p.bg?`<img src="${p.bg}" class="max-h-60 mx-auto rounded">`:`<div class="whitespace-pre-wrap font-medium">${esc(p.ins)}</div>`;
-  $('#tIns').value=p.ins||'';
-  $('#tOpen').textContent=T.open?'Room is open (Click to close)':'Open room to students';
-  $('#tStrip').innerHTML=T.pages.map((_,i)=>`<button class="btn chip ${i===T.cur?'btn-p':''}" onclick="goto(${i})">P${i+1}</button>`).join('');
-  
-  const list=Object.entries(T.students);
-  $('#tGrid').innerHTML=list.length?list.map(([id,s])=>`<div class="card p-2 text-sm"><b>${esc(s.name)}</b><p class="mt-1">${esc((s.ans||{})[p.id]||'No answer yet')}</p></div>`).join(''):`<p class="text-sm" style="color:var(--mute)">Students will appear here when they type.</p>`;
+let rawBy={};
+const canon=(raw,name)=>(String(raw).startsWith('T-')?'T-':'')+'s-'+String(name||'').trim().toLowerCase().replace(/\s+/g,' ').slice(0,30);
+/* teacher -> server */
+function teacherOut(m){
+  if(!RM.key)return;const k={p_code:RM.code,p_key:RM.key};
+  if(m.t==='state')queue(()=>saveState(m));
+  else if(m.t==='clear'){clr[m.pid]=Date.now();queue(()=>rpc('teacher_clear',{...k,p_page:m.pid}))}
+  else if(m.t==='msg')(rawBy[m.sid]||[m.sid]).forEach(x=>queue(()=>rpc('teacher_msg',{...k,p_sid:x,p_text:m.text})));
+  else if(m.t==='kick')(rawBy[m.sid]||[m.sid]).forEach(x=>queue(()=>rpc('teacher_kick',{...k,p_sid:x})));
+}
+async function saveState(m){
+  const k={p_code:RM.code,p_key:RM.key},pages=[];
+  for(const p of m.pages){
+    let bg=null;
+    if(p.bg&&p.bg.startsWith('url:'))bg=p.bg;else if(p.bg){bg=hsig(p.bg);if(up[p.id]!==bg){try{await rpc('teacher_save_image',{...k,p_page:p.id,p_data:p.bg});up[p.id]=bg;lsSet('lw_up_'+RM.code,up)}catch(e){console.error(e);bg=null;toast('Couldn’t upload the picture for one page. It may be too large. Try a smaller file.')}}}
+    pages.push({id:p.id,bg,ins:p.ins||'',txt:p.txt||''});
+  }
+  const st={pages,cur:m.cur,reveal:m.reveal,open:!!m.open,timer:m.timer||null,teacher:m.teacher||'',mode:m.mode||'home',quiz:m.quiz||null,anon:T.anon,clr},s=JSON.stringify(st);
+  if(s===lastSaved)return;
+  await rpc('teacher_save',{...k,p_state:st});lastSaved=s;
+}
+async function teacherTick(){
+  if(role!=='teacher'||!RM.key)return;
+  try{
+    const r=await rpc('teacher_poll',{p_code:RM.code,p_key:RM.key,p_since:since?new Date(Date.parse(since)-3000).toISOString():null});
+    rawBy={};const kOf={},roster={};
+    r.students.forEach(x=>{const K=canon(x.sid,x.name);kOf[x.sid]=K;(rawBy[K]=rawBy[K]||[]).push(x.sid);const e=roster[K]||(roster[K]={sid:K,name:x.name,online:false});e.online=e.online||x.online;e.name=x.name});
+    r.answers.sort((a,b)=>a.at<b.at?-1:a.at>b.at?1:0).forEach(a=>{
+      const K=kOf[a.sid]||canon(a.sid,a.name);
+      emit({t:'ans',sid:K,name:a.name,pid:a.pid,text:a.txt,at:a.at});
+      emit({t:'submit',sid:K,name:a.name,pid:a.pid,on:a.sub,text:a.txt});
+      if(!since||a.at>since)since=a.at;
+    });
+    emit({t:'roster',list:Object.values(roster)});setNet(true);
+  }catch(e){setNet(false)}
 }
 
-window.goto=i=>{T.cur=i;renderTeacher()};
+/* student -> server */
+function flushAns(){const p=ansP;ansP={};for(const pid in p)queue(()=>rpc('student_save_text',{p_code:RM.code,p_sid:sid,p_page:pid,p_txt:p[pid]}))}
+function studentOut(m){
+  if(!RM.code)return;const a={p_code:RM.code,p_sid:sid};
+  if(m.t==='join')queue(async()=>{
+    const r=await rpc('student_join',{...a,p_name:m.name});
+    if(r&&r.err){netStop();if(r.err==='kicked')emit({t:'kick',sid});else{toast('Room not found. Check the code.');needName()}return}
+    msgN=null;await studentRefresh();
+    for(const pid in my.ans)await rpc('student_save_text',{...a,p_page:pid,p_txt:my.ans[pid]});
+    for(const pid in my.sub)if(my.sub[pid])await rpc('student_submit',{...a,p_page:pid,p_on:true});
+    startNet();
+  });
+  else if(m.t==='ans'){if(String(m.pid).startsWith('q:'))queue(()=>rpc('student_save_text',{...a,p_page:m.pid,p_txt:m.text}));else{ansP[m.pid]=m.text;clearTimeout(ansT);ansT=setTimeout(flushAns,600)}}
+  else if(m.t==='draw')queue(()=>rpc('student_save_draw',{...a,p_page:m.pid,p_draw:m.img||''}));
+  else if(m.t==='submit'){
+    clearTimeout(ansT);ansP={};
+    queue(async()=>{
+      if(m.on){await rpc('student_save_text',{...a,p_page:m.pid,p_txt:m.text||''})}
+      await rpc('student_submit',{...a,p_page:m.pid,p_on:!!m.on});
+    });
+  }
+}
+async function studentRefresh(){
+  const r=await rpc('get_state',{p_code:RM.code});if(!r)return;
+  stV=r.version;stRaw=r.state||{};my.clr=my.clr||{};
+  const c=stRaw.clr||{};
+  for(const pid in c)if(my.clr[pid]!==c[pid]){my.clr[pid]=c[pid];emit({t:'clear',pid})}
+  saveMy();emitState();
+}
+function emitState(){
+  if(!stRaw||!stRaw.pages)return;
+  if(!stRaw.open){emit({t:'state',pages:[],cur:0,reveal:false,timer:null,shared:{}});return}
+  const cur=stRaw.cur||0,pages=stRaw.pages.map(p=>({id:p.id,ins:p.ins,txt:p.txt,bg:p.bg?(p.bg.startsWith('url:')?p.bg.slice(4):(imgs[p.id+p.bg]||null)):null}));
+  emit({t:'state',pages,cur,reveal:!!stRaw.reveal,timer:stRaw.timer||null,mode:stRaw.mode||'book',quiz:stRaw.quiz||null,shared:sharedC});
+  [cur,Math.min(S.view,cur)].forEach(i=>{
+    const p=stRaw.pages[i],key=p&&p.id+p.bg;
+    if(p&&p.bg&&!p.bg.startsWith('url:')&&!imgs[key]&&!loading[key]){loading[key]=1;rpc('get_image',{p_code:RM.code,p_page:p.id}).then(d=>{if(d){imgs[key]=d;emitState()}}).catch(()=>{loading[key]=0})}
+  });
+}
+async function studentTick(){
+  if(role!=='student'||!RM.code||kicked)return;
+  try{
+    const r=await rpc('student_ping',{p_code:RM.code,p_sid:sid});
+    if(!r||r.err){setNet(false);setWait('This room no longer exists. Check the room code.');return}
+    if(r.kicked){netStop();emit({t:'kick',sid});return}
+    if(msgN===null)msgN=r.msg_n;else if(r.msg_n>msgN){msgN=r.msg_n;emit({t:'msg',sid,text:r.msg})}
+    if(r.version!==stV)await studentRefresh();
+    else if(stRaw&&stRaw.reveal&&tick%2===0){
+      const p=stRaw.pages[Math.min(S.view,stRaw.cur||0)];
+      if(p){sharedC={...sharedC,[p.id]:await rpc('get_shared',{p_code:RM.code,p_sid:sid,p_page:p.id})||[]};emitState()}
+    }
+    setNet(true);
+    if(!stRaw||!stRaw.open)setWait(stRaw&&stRaw.teacher?'You’re in '+stRaw.teacher+'’s room. It will open shortly.':'You’re in the room. Your teacher will open it shortly.');
+  }catch(e){setNet(false);setWait('Can’t reach the server. Check your internet connection.')}
+}
+const lsGet=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
+let warned=false;
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){if(!warned){warned=true;toast('Page is too large to save for refresh. Live sync still works.')}}};
+const debounce=(f,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f(...a),ms)}};
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.remove('hidden');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.add('hidden'),3000)}
+
+const urlRoom=(new URLSearchParams(location.search).get('room')||'').toUpperCase().replace(/[^A-Z0-9-]/g,''),linkMode=!!urlRoom||location.hash==='#join';
+let role=linkMode?'student':(sessionStorage.getItem('lw_role')||null);
+let TC=null;try{TC=JSON.parse(localStorage.getItem('lw_tcreds'))}catch(e){}
+let RM={code:urlRoom||(role==='teacher'&&TC?TC.code:localStorage.getItem('lw_room'))||'',key:role==='teacher'&&TC&&!urlRoom?TC.key:'',name:role==='teacher'&&TC?TC.name:''};
+if(role==='teacher'&&!RM.key)role=null;
+
+/* ================= TEACHER ================= */
+let T=lsGet('lw_teacher',null)||{pages:[{id:uid(),bg:null,ins:''}],cur:0,reveal:false,anon:false,students:{}};
+Object.values(T.students).forEach(s=>s.online=false);
+const saveT=()=>lsSet('lw_teacher',T);
+const page=()=>T.pages[T.cur];
+const stName=(s,i)=>T.anon?'Student '+(i+1):s.name;
+
+function shared(){
+  if(!T.reveal)return null;
+  const out={};const list=Object.values(T.students);
+  T.pages.forEach(p=>{out[p.id]=list.map((s,i)=>({n:stName(s,i),t:(s.ans||{})[p.id]||'',d:(s.draw||{})[p.id]||''})).filter(x=>x.t||x.d)});
+  return out;
+}
+function push(){ch.postMessage({t:'state',pages:T.pages,cur:T.cur,reveal:T.reveal,open:!!T.open,timer:T.timer||null,teacher:RM.name||'',mode:T.mode||'home',quiz:T.quiz||null,shared:shared()});saveT()}
+
+function renderPageInfo(){
+  $('#tCount').textContent=`Page ${T.cur+1} of ${T.pages.length}`;
+  $('#tPrev').disabled=T.cur===0;$('#tNext').disabled=T.cur===T.pages.length-1;
+  $('#tWs').innerHTML=page().bg?`<img src="${imgSrc(page().bg)}" alt="Activity file for page ${T.cur+1}">`:`<p class="text-sm p-6 text-center" style="color:var(--mute);border:1px dashed var(--line);border-radius:8px">This page is blank. Drag a PDF or image here, use Upload Activity File, or type instructions below.</p>`;
+  $('#tIns').value=page().ins||'';
+}
+function renderToggles(){
+  $('#tAnon').setAttribute('aria-pressed',T.anon);$('#tAnonTxt').textContent=T.anon?'Show student names':'Anonymize answers';
+  $('#tReveal').setAttribute('aria-pressed',T.reveal);
+  $('#tOpen').setAttribute('aria-pressed',!!T.open);$('#tOpenTxt').textContent=T.open?'Room is open to students':'Open room to students';
+  $('#tOpenHint').textContent=T.open?'Students in this room can see your pages. Edits show up for them automatically.':'Room is closed. Students who join see a waiting screen until you open it.';
+}
+function isOwnSid(id){return String(id).startsWith('T-')}
+function renderGrid(){
+  const pid=page().id,list=Object.entries(T.students);
+  const nSub=list.filter(([,s])=>(s.sub||{})[pid]).length;
+  $('#tGridHint').textContent=(list.length?`${list.length} in room, ${nSub} submitted. Click a card to open it.`:'')+(T.anon?' Names hidden.':'');
+  $('#tGrid').innerHTML=list.length?list.map(([id,s],i)=>{const t=(s.ans||{})[pid]||'',sub=(s.sub||{})[pid];
+    return `<article class="card p-3 cursor-pointer" tabindex="0" role="button" data-open="${esc(id)}" aria-label="Open ${esc(stName(s,i))}’s work"><div class="flex items-center gap-2 mb-2"><span class="dot ${s.online?'on':''}"></span><b class="flex-1 truncate">${esc(stName(s,i))}${isOwnSid(id)?' (you, test view)':''}</b>${sub?'<span class="hl">Submitted</span>':(t?'<span class="text-xs" style="color:var(--mute)">Typing</span>':'')}</div>${t?`<p class="whitespace-pre-wrap text-sm line-clamp-5">${esc(t)}</p>`:`<p class="text-sm" style="color:var(--mute)">No answer yet</p>`}</article>`}).join(''):`<p class="text-sm" style="color:var(--mute)">Answers will appear here as students type.</p>`;
+  renderStModal();
+  if(T.mode==='quiz'&&role==='teacher')renderQuizHost();
+}
+function renderStrip(){$('#tStrip').innerHTML=T.pages.map((p,i)=>`<button draggable="true" class="btn chip ${i===T.cur?'btn-p':''}" data-pg="${i}" aria-label="Page ${i+1}">${i+1}</button>`).join('')}
+const renderT=()=>{renderPageInfo();renderToggles();renderGrid();renderStrip()};
+
+function goto(i){T.cur=Math.max(0,Math.min(T.pages.length-1,i));renderT();push()}
 $('#tPrev').onclick=()=>goto(T.cur-1);
 $('#tNext').onclick=()=>goto(T.cur+1);
-$('#tAdd').onclick=()=>{T.pages.push({id:uid(),bg:null,ins:'New activity'});goto(T.pages.length-1)};
-$('#tDel').onclick=()=>{if(T.pages.length>1){T.pages.splice(T.cur,1);T.cur=Math.min(T.cur,T.pages.length-1);renderTeacher()}};
-$('#tIns').oninput=e=>{T.pages[T.cur].ins=e.target.value;renderTeacher()};
-$('#tOpen').onclick=()=>{T.open=!T.open;renderTeacher();toast(T.open?'Room opened!':'Room closed.')};
-$('#tClear').onclick=()=>{const pid=T.pages[T.cur].id;Object.values(T.students).forEach(s=>{if(s.ans)delete s.ans[pid]});renderTeacher();toast('Cleared')};
-
-$('#tFile').onchange=e=>{
-  const f=e.target.files[0];if(!f)return;
-  const fr=new FileReader();
-  fr.onload=()=>{T.pages[T.cur].bg=fr.result;renderTeacher();toast('Uploaded!')};
-  fr.readAsDataURL(f);
-  e.target.value='';
+$('#tAdd').onclick=()=>{T.pages.splice(T.cur+1,0,{id:uid(),bg:null,ins:''});goto(T.cur+1)};
+$('#tDel').onclick=()=>{
+  const p=page();Object.values(T.students).forEach(s=>{delete (s.ans||{})[p.id];delete (s.draw||{})[p.id]});
+  if(T.pages.length===1)T.pages[0]={id:uid(),bg:null,ins:''};else{T.pages.splice(T.cur,1);T.cur=Math.min(T.cur,T.pages.length-1)}
+  renderT();push();
 };
+$('#tIns').oninput=e=>{page().ins=e.target.value;debouncedPush()};
+const debouncedPush=debounce(push,250);
+$('#tClear').onclick=()=>{const pid=page().id;Object.values(T.students).forEach(s=>{delete (s.ans||{})[pid];delete (s.draw||{})[pid];delete (s.sub||{})[pid]});ch.postMessage({t:'clear',pid});renderGrid();push();toast('Cleared all answers on this page')};
+$('#tOpen').onclick=()=>{T.open=!T.open;renderToggles();push();toast(T.open?'Room is open. Students can see your pages.':'Room closed. Students see the waiting screen.')};
+$('#tAnon').onclick=()=>{T.anon=!T.anon;renderToggles();renderGrid();push()};
+$('#tReveal').onclick=()=>{T.reveal=!T.reveal;renderToggles();push();toast(T.reveal?'Students can now see shared answers':'Answers hidden from students')};
 
-function renderStudent(){
-  const has=T.open&&S.pages.length>0;
-  $('#sWait').classList.toggle('hidden',has);
-  $('#sBody').classList.toggle('hidden',!has);
-  if(!has)return;
-  const p=S.pages[S.view]||S.pages[0];
-  $('#sTabs').innerHTML=S.pages.map((_,i)=>`<button class="btn ${i===S.view?'btn-p':''}" onclick="setSView(${i})">Page ${i+1}</button>`).join('');
-  $('#sWs').innerHTML=p.bg?`<img src="${p.bg}" class="max-h-72 mx-auto rounded">`:`<div class="whitespace-pre-wrap font-medium">${esc(p.ins)}</div>`;
-  if($('#sAns').value!==my.ans[p.id]) $('#sAns').value=my.ans[p.id]||'';
-  const sub=!!my.sub[p.id];
-  $('#sSubmit').classList.toggle('hidden',sub);
-  $('#sEdit').classList.toggle('hidden',!sub);
-  $('#sAns').readOnly=sub;
-  $('#sMode').className='mode '+(sub?'done':'draft');
-  $('#sMode').textContent=sub?'Submitted':'Draft';
+// file upload
+const shrink=(src,maxW)=>new Promise(r=>{const im=new Image();im.onload=()=>{const k=Math.min(1,maxW/im.width),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);r(c.toDataURL('image/jpeg',.78))};im.src=src});
+const readURL=f=>new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(f)});
+async function loadFile(f){
+  const st=$('#tUpStatus');
+  try{
+    if(f.type==='application/pdf'){
+      const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise,n=Math.min(pdf.numPages,30),imgs=[];
+      for(let i=1;i<=n;i++){
+        st.textContent=`Rendering PDF page ${i} of ${n}…`;
+        const pg=await pdf.getPage(i),vp=pg.getViewport({scale:1.4}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;
+        await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;imgs.push(await hostImg(c.toDataURL('image/jpeg',.72)));
+      }
+      page().bg=imgs[0];
+      imgs.slice(1).forEach((b,k)=>T.pages.splice(T.cur+1+k,0,{id:uid(),bg:b,ins:''}));
+      st.textContent=n>1?`Loaded ${n} PDF pages starting here.`:'PDF loaded.';
+    }else if(/^image\/(png|jpeg)$/.test(f.type)){
+      page().bg=await hostImg(await shrink(await readURL(f),1400));st.textContent='Image loaded.';
+    }else{st.textContent='Please choose a PDF, PNG or JPG file.';return}
+    renderT();push();
+  }catch(err){st.textContent='Couldn’t read that file. Try another PDF or image.';console.error(err)}
+  }
+$('#tFile').onchange=async e=>{const f=e.target.files[0];if(f)await loadFile(f);e.target.value=''};
+
+// roster actions
+let msgTarget=null;
+let openSid=null,kickArm=false,actsKey='';
+function closeSt(){openSid=null;$('#stModal').classList.add('hidden')}
+function openStudent(id){openSid=id;kickArm=false;actsKey='';$('#stModal').classList.remove('hidden');renderStModal()}
+function renderStModal(){
+  if(!openSid)return;
+  const s=T.students[openSid];if(!s){closeSt();return}
+  const idx=Object.keys(T.students).indexOf(openSid),own=isOwnSid(openSid),cur=page().id;
+  $('#stName').textContent=stName(s,idx)+(own?' (you, test view)':'');
+  $('#stMeta').textContent=s.online?'Online now':'Offline';
+  $('#stBody').innerHTML=T.pages.map((p,i)=>({p,i,t:(s.ans||{})[p.id]||'',sub:!!(s.sub||{})[p.id]})).filter(r=>r.t||r.p.id===cur).map(r=>`<section><div class="lbl">Page ${r.i+1}${r.p.id===cur?' (live page)':''} ${r.sub?'<span class="hl">Submitted</span>':''}</div><div class="p-3 rounded-lg whitespace-pre-wrap" style="background:var(--bg);border:2px solid var(--pencil);font-size:1.2rem;line-height:1.7">${r.t?esc(r.t):"<span style='color:var(--mute)'>No answer yet</span>"}</div></section>`).join('');
+  const k=openSid+own+kickArm;if(k===actsKey)return;actsKey=k;
+  const a=$('#stActs');
+  if(own){a.innerHTML='<p class="text-sm" style="color:var(--mute)">This is your own test view, so it can’t be messaged or removed.</p>';return}
+  a.innerHTML=`<button class="btn" id="stMsg">Send private message</button><button class="btn btn-d" id="stKick">${kickArm?'Click again to confirm':'Remove from room'}</button>`;
+  $('#stMsg').onclick=()=>{msgTarget=openSid;$('#msgTo').textContent=T.students[openSid].name;$('#msgText').value='';$('#msgModal').classList.remove('hidden');$('#msgText').focus()};
+  $('#stKick').onclick=()=>{if(!kickArm){kickArm=true;actsKey='';renderStModal();return}ch.postMessage({t:'kick',sid:openSid});delete T.students[openSid];closeSt();renderGrid();push();toast('Student removed')};
+}
+document.addEventListener('click',e=>{const el=e.target.closest('[data-open]');if(el&&role==='teacher')openStudent(el.dataset.open)});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&openSid)closeSt();
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('article[data-open]')){e.preventDefault();openStudent(e.target.dataset.open)}
+});
+$('#stClose').onclick=closeSt;
+$('#stModal').onclick=e=>{if(e.target.id==='stModal')closeSt()};
+$('#msgCancel').onclick=()=>$('#msgModal').classList.add('hidden');
+$('#msgSend').onclick=()=>{const t=$('#msgText').value.trim();if(t&&msgTarget){ch.postMessage({t:'msg',sid:msgTarget,text:t});toast('Message sent')}$('#msgModal').classList.add('hidden')};
+
+function teacherReceive(m){
+  if(m.t==='join'||m.t==='ans'||m.t==='draw'||m.t==='submit'){
+    if(!T.students[m.sid]){const old=Object.keys(T.students).find(k=>T.students[k].name===m.name&&!T.students[k].online);if(old){T.students[m.sid]=T.students[old];delete T.students[old]}}
+    const s=T.students[m.sid]||(T.students[m.sid]={name:m.name,online:true,ans:{},draw:{}});
+    s.name=m.name||s.name;s.online=true;s.ans=s.ans||{};s.draw=s.draw||{};s.sub=s.sub||{};
+    if(m.t==='join'){Object.assign(s.ans,m.ans||{});Object.assign(s.draw,m.draw||{});Object.assign(s.sub,m.sub||{});push()}
+    if(m.t==='ans'){s.ans[m.pid]=m.text;if(m.at){s.at=s.at||{};s.at[m.pid]=m.at}if(T.reveal)debouncedPush();else saveT()}
+    if(m.t==='draw'){s.draw[m.pid]=m.img;if(T.reveal)debouncedPush();else saveT()}
+    if(m.t==='submit'){s.sub[m.pid]=m.on;if(m.on){s.ans[m.pid]=m.text;if(m.img)s.draw[m.pid]=m.img}saveT()}
+    renderGrid();
+  }
+  if(m.t==='leave'&&T.students[m.sid]){T.students[m.sid].online=false;renderGrid()}
+  if(m.t==='roster'){
+    const keep={};
+    m.list.forEach(r=>{keep[r.sid]=1;const s=T.students[r.sid]||(T.students[r.sid]={name:r.name,ans:{},draw:{},sub:{}});s.name=r.name;s.online=r.online;s.ans=s.ans||{};s.draw=s.draw||{};s.sub=s.sub||{}});
+    Object.keys(T.students).forEach(k=>{if(!keep[k])delete T.students[k]});
+    saveT();renderGrid();
+  }
 }
 
-window.setSView=i=>{S.view=i;renderStudent()};
-$('#sAns').oninput=e=>{const pid=S.pages[S.view].id;my.ans[pid]=e.target.value;if(myName){T.students[sid]=T.students[sid]||{name:myName,ans:{}};T.students[sid].ans[pid]=e.target.value;if(role==='teacher')renderTeacher();}};
-$('#sSubmit').onclick=()=>{const pid=S.pages[S.view].id;if(!my.ans[pid]){toast('Write an answer first');return}my.sub[pid]=true;renderStudent();toast('Submitted!')};
-$('#sEdit').onclick=()=>{const pid=S.pages[S.view].id;my.sub[pid]=false;renderStudent();$('#sAns').focus()};
+/* ================= STUDENT ================= */
+let sid='';const normName=n=>String(n||'').trim().toLowerCase().replace(/\s+/g,' ').slice(0,30);
+let S={pages:[],cur:0,reveal:false,shared:null,view:0},myName=localStorage.getItem('lw_name')||'',my={ans:{},draw:{},sub:{},clr:{},qa:{}},shownPid=null,kicked=false;
+my.sub=my.sub||{};
+const saveMy=()=>lsSet('lw_my_'+(RM.code||'')+'_'+sid,my);
+function ident(){
+  sid=(TC?'T-':'')+'s-'+normName(myName);
+  my=lsGet('lw_my_'+(RM.code||'')+'_'+sid,{});my.ans=my.ans||{};my.draw=my.draw||{};my.sub=my.sub||{};my.clr=my.clr||{};my.qa=my.qa||{};shownPid=null;
+}
+const joinMsg=()=>({t:'join',sid,name:myName,ans:my.ans,draw:my.draw,sub:my.sub});
 
-$('#roleT').onclick=()=>{role='teacher';$('#teacher').classList.remove('hidden');$('#student').classList.add('hidden');$('#roleT').classList.add('btn-p');$('#roleS').classList.remove('btn-p');renderTeacher()};
-$('#roleS').onclick=()=>{role='student';$('#teacher').classList.add('hidden');$('#student').classList.remove('hidden');$('#roleS').classList.add('btn-p');$('#roleT').classList.remove('btn-p');if(!myName){$('#joinModal').classList.remove('hidden')}else{renderStudent()}};
-$('#shareBtn').onclick=async()=>{await navigator.clipboard.writeText(location.href);toast('Link copied!')};
+function renderS(){
+  const has=S.pages.length>0,home=has&&S.mode==='home',qz=has&&S.mode==='quiz'&&S.quiz&&QUIZ[S.quiz.id];
+  $('#sWait').classList.toggle('hidden',has&&!home);$('#sBody').classList.toggle('hidden',!has||home||!!qz);$('#sQuiz').classList.toggle('hidden',!qz);
+  if(home)setWait('Your teacher is choosing the next activity\u2026');
+  if(qz){renderQuizStudent();return}
+  if(!has||home)return;
+  S.view=Math.min(S.view,S.cur);const p=S.pages[S.view];
+  $('#sTabs').innerHTML=S.pages.slice(0,S.cur+1).map((q,i)=>`<button class="btn ${i===S.view?'btn-p':''}" data-v="${i}">${i===S.cur?'<span class="hl">LIVE</span> ':''}Page ${i+1}</button>`).join('');
+  $('#sBack').classList.toggle('hidden',S.view===S.cur);
+  $('#sWs').innerHTML=p.bg?`<img src="${p.bg}" alt="Worksheet page ${S.view+1}">`:'';
+  $('#sIns').textContent=p.ins||((p.bg)?'':'Your teacher hasn’t added anything to this page yet.');
+  if(shownPid!==p.id){shownPid=p.id;$('#sAns').value=my.ans[p.id]||''}
+  submitUI();
+  const sh=S.reveal&&S.shared&&S.shared[p.id];
+  $('#sShared').classList.toggle('hidden',!S.reveal);
+  $('#sSharedList').innerHTML=sh&&sh.length?sh.map(x=>`<div class="p-3 rounded-lg" style="border:1px solid var(--line)"><b class="text-sm">${esc(x.n)}</b>${x.t?`<p class="text-sm whitespace-pre-wrap mt-1">${esc(x.t)}</p>`:''}${x.d?`<img class="mt-2 rounded" src="${x.d}" alt="">`:''}</div>`).join(''):`<p class="text-sm" style="color:var(--mute)">No answers to show on this page yet.</p>`;
+}
+$('#sTabs').onclick=e=>{const v=e.target.closest('[data-v]');if(v){S.view=+v.dataset.v;renderS()}};
+$('#sBackBtn').onclick=()=>{S.view=S.cur;renderS()};
+const curPid=()=>S.pages[S.view]&&S.pages[S.view].id;
+const sendAns=debounce(()=>{const pid=curPid();if(pid)ch.postMessage({t:'ans',sid,name:myName,pid,text:my.ans[pid]||''})},150);
+$('#sAns').oninput=e=>{const pid=curPid();if(!pid)return;my.ans[pid]=e.target.value;saveMy();sendAns();unsub(pid)};
 
-$('#joinBtn').onclick=()=>{
-  myName=$('#joinName').value.trim();const code=$('#joinRoom').value.trim();
-  if(!myName||!code)return;
-  sid='s-'+myName.toLowerCase();
-  localStorage.setItem('lw_name',myName);
-  $('#joinModal').classList.add('hidden');
-  renderStudent();
+// submit
+function submitUI(){
+  const pid=curPid();if(!pid)return;const done=!!my.sub[pid];
+  $('#sSubmit').classList.toggle('hidden',done);$('#sEdit').classList.toggle('hidden',!done);
+  $('#sAns').readOnly=done;
+  const m=$('#sMode');m.className='mode '+(done?'done':'draft');m.textContent=done?'✔ Submitted · locked':'✏ Draft · editing';
+  $('#sSubStatus').textContent=done?'Your teacher has your answer. Press Edit answer to change it.':'Your teacher can see your draft. Press Submit answer when you’re done.';
+}
+function unsub(pid){if(my.sub[pid]){my.sub[pid]=false;saveMy();ch.postMessage({t:'submit',sid,name:myName,pid,on:false});submitUI()}}
+$('#sSubmit').onclick=()=>{
+  const pid=curPid();if(!pid)return;
+  if(!(my.ans[pid]||'').trim()){toast('Write an answer first');return}
+  my.sub[pid]=true;saveMy();
+  ch.postMessage({t:'submit',sid,name:myName,pid,on:true,text:my.ans[pid]||'',img:my.draw[pid]||''});
+  submitUI();toast('Answer submitted');
 };
 
-// Initial state
-$('#roomCode').textContent=RM.code;
-renderTeacher();
+$('#sEdit').onclick=()=>{const pid=curPid();if(pid){unsub(pid);$('#sAns').focus()}};
+
+// join flow
+function join(){ch.postMessage(joinMsg());ch.postMessage({t:'hello'})}
+function needName(){$('#joinRoom').value=RM.code||localStorage.getItem('lw_room')||'';$('#joinRoom').readOnly=!!urlRoom;$('#joinName').value=myName||'';$('#joinModal').classList.remove('hidden');($('#joinRoom').value?$('#joinName'):$('#joinRoom')).focus()}
+$('#joinBtn').onclick=()=>{const n=$('#joinName').value.trim(),c=$('#joinRoom').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g,'');if(!n||!c){(n?$('#joinRoom'):$('#joinName')).focus();return}myName=n;RM.code=c;localStorage.setItem('lw_name',n);localStorage.setItem('lw_room',c);ident();$('#joinModal').classList.add('hidden');join()};
+$('#joinName').onkeydown=e=>{if(e.key==='Enter')$('#joinBtn').click()};
+$('#rejoinBtn').onclick=()=>{kicked=false;$('#kickModal').classList.add('hidden');join()};
+$('#kickBack').onclick=()=>{kicked=false;$('#kickModal').classList.add('hidden');setRole('teacher')};
+
+function studentReceive(m){
+  if(m.t==='state'){
+    const changed=S.pages.length&&m.cur!==S.cur;
+    const wasLive=S.view===S.cur;
+    S={pages:m.pages,cur:m.cur,reveal:m.reveal,timer:m.timer||null,mode:m.mode||'book',quiz:m.quiz||null,shared:m.shared,view:(wasLive||changed)?m.cur:S.view};
+    if(!kicked)renderS();
+  }
+  if(m.t==='teacher-up'&&myName&&!kicked)ch.postMessage(joinMsg());
+  if(m.t==='clear'){delete my.ans[m.pid];delete my.draw[m.pid];delete my.sub[m.pid];saveMy();if(shownPid===m.pid){$('#sAns').value='';submitUI()}}
+  if((m.sid===sid||m.sid===netId)&&m.t==='msg'){const b=$('#sMsg');b.innerHTML=`<b>Message from your teacher</b><p class="mt-1 whitespace-pre-wrap">${esc(m.text)}</p><button class="btn mt-2" id="sMsgX">Dismiss</button>`;b.classList.remove('hidden');$('#sMsgX').onclick=()=>b.classList.add('hidden')}
+  if((m.sid===sid||m.sid===netId)&&m.t==='kick'){kicked=true;$('#kickBack').classList.toggle('hidden',!(TC&&!linkMode));$('#kickModal').classList.remove('hidden')}
+}
+
+/* ================= COPY / PASTE PAGES ================= */
+let clip=null;try{clip=JSON.parse(localStorage.getItem('lw_clip'))}catch(e){}
+const toPng=src=>new Promise(r=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);c.toBlob(r,'image/png')};im.src=src});
+const saveClip=()=>{try{localStorage.setItem('lw_clip',JSON.stringify(clip))}catch(e){}};
+async function insertPage(d){if(d.bg&&d.bg.startsWith('data:'))d={...d,bg:await hostImg(d.bg)};T.pages.splice(T.cur+1,0,{id:uid(),bg:d.bg||null,ins:d.ins||'',txt:d.txt||''});goto(T.cur+1)}
+document.addEventListener('paste',async e=>{
+  if(role!=='teacher'||linkMode||!e.clipboardData)return;
+  const f=[...e.clipboardData.files].find(x=>/^image\//.test(x.type)||x.type==='application/pdf');if(!f)return;
+  e.preventDefault();
+  if(f.type==='application/pdf'){await loadFile(f);return}
+  if(clip&&clip.sig&&clip.sig===f.size){insertPage(clip);toast('Pasted page')}else{insertPage({bg:await shrink(await readURL(f),1400)});toast('Pasted picture as a new page')}
+});
+
+const hostImg=async d=>d;
+
+/* ================= LIBRARY AND QUIZ GAME ================= */
+const OCOL=['#e21b3c','#1368ce','#c58a00','#26890c','#7b3fbf'],OSH=['▲','◆','●','■','★'];
+let homeCh=null;
+function showTView(){
+  const m=T.mode||'home',t=role==='teacher';
+  $('#home').classList.toggle('hidden',!(t&&m==='home'));
+  $('#teacher').classList.toggle('hidden',!(t&&m==='book'));
+  $('#tQuizView').classList.toggle('hidden',!(t&&m==='quiz'));
+  $('#libBtn').classList.toggle('hidden',!(t&&m!=='home'));
+  if(!t)return;
+  if(m==='home')renderHome();
+  if(m==='quiz')renderQuizHost();
+  if(m==='book'){renderT();applySplit()}
+}
+function renderHome(){
+  const h=$('#home');
+  if(!homeCh){
+    h.innerHTML=`<h2>Library</h2><p class="text-sm mb-3" style="color:var(--mute)">Pick a chapter, or open your own blank notebook.</p><div class="grid gap-4 sm:grid-cols-2">${LIB.map(c=>`<button class="card p-4 text-left cursor-pointer" data-ch="${c.id}"><span class="hl">${c.level}</span><h2 class="mt-2">${esc(c.title)}</h2><p class="text-sm" style="color:var(--mute)">${c.sections.length} sections. Each has a notebook and a quiz game.</p></button>`).join('')}<button class="card p-4 text-left cursor-pointer" data-go="book"><h2>My own notebook</h2><p class="text-sm" style="color:var(--mute)">Upload PDFs or images and build your own pages.</p></button></div>`;
+  }else{
+    const c=LIB.find(x=>x.id===homeCh);
+    h.innerHTML=`<button class="btn" data-ch="">Back to library</button><h2 class="mt-3">${c.level}: ${esc(c.title)}</h2><div class="grid gap-4 mt-3">${c.sections.map(s=>`<div class="card p-4"><h2>${esc(s.title)}</h2><p class="text-sm" style="color:var(--mute)">${esc(s.sub||'')} ${s.pages.length} notebook pages, ${QUIZ[s.quiz].questions.length} quiz questions.</p><div class="flex flex-wrap gap-2 mt-3"><button class="btn btn-p" data-book="${s.id}">Open notebook</button><button class="btn" data-quiz="${s.quiz}">Start quiz game</button></div></div>`).join('')}</div>`;
+  }
+}
+$('#home').addEventListener('click',e=>{
+  const b=e.target.closest('[data-ch],[data-go],[data-book],[data-quiz]');if(!b)return;
+  if('ch' in b.dataset){homeCh=b.dataset.ch||null;renderHome()}
+  else if(b.dataset.go){T.mode='book';showTView();push()}
+  else if(b.dataset.book){
+    const s=LIB.flatMap(c=>c.sections).find(x=>x.id===b.dataset.book),pad=n=>String(n).padStart(3,'0');
+    T.pages=s.pages.map(n=>({id:s.id+'-'+pad(n),bg:'url:chapters/a2-ch4/s-'+pad(n)+'.jpg',ins:''}));T.cur=0;T.mode='book';T.quiz=null;showTView();push();toast('Notebook loaded: '+s.title);
+  }else if(b.dataset.quiz){T.quiz={id:b.dataset.quiz,i:0,phase:'lobby',dur:20,t0:0,t0s:{},lb:null};T.mode='quiz';showTView();push()}
+});
+$('#libBtn').onclick=()=>{T.mode='home';showTView();push()};
+
+function quizBoard(){
+  const q=T.quiz,Q=QUIZ[q.id].questions,rows=[];
+  Object.entries(T.students).forEach(([K,s])=>{
+    if(isOwnSid(K))return;let tot=0;
+    for(let i=0;i<=q.i;i++){
+      const pid='q:'+q.id+':'+i,a=s.ans&&s.ans[pid];if(a==null||a==='')continue;
+      const t0=q.t0s[i],at=s.at&&s.at[pid]?Date.parse(s.at[pid]):null,ms=q.dur*1000;
+      if(at&&t0&&at>t0+ms+3000)continue;
+      if(+a===Q[i].c){const el=at&&t0?Math.min(Math.max(at-t0,0),ms):ms/2;tot+=Math.round(1000*(1-el/(2*ms)))}
+    }
+    rows.push({n:s.name,s:tot});
+  });
+  return rows.sort((a,b)=>b.s-a.s||a.n.localeCompare(b.n));
+}
+function qCounts(){
+  const q=T.quiz,pid='q:'+q.id+':'+q.i,n=QUIZ[q.id].questions[q.i].o.length,c=Array(n).fill(0);let tot=0;
+  Object.entries(T.students).forEach(([K,s])=>{if(isOwnSid(K))return;const a=s.ans&&s.ans[pid];if(a!=null&&a!==''&&c[+a]!=null){c[+a]++;tot++}});
+  return{c,tot};
+}
+function beginQ(){const q=T.quiz;q.phase='q';q.t0=srvNow();q.t0s[q.i]=q.t0;q.lb=null;push();renderQuizHost()}
+function revealQ(){const q=T.quiz;if(!q||q.phase!=='q')return;q.lb=quizBoard();q.phase='r';push();renderQuizHost()}
+function finishQ(){const q=T.quiz;q.lb=quizBoard();q.phase='end';push();renderQuizHost()}
+function renderQuizHost(){
+  const q=T.quiz;if(!q||T.mode!=='quiz')return;
+  const Q=QUIZ[q.id],N=Q.questions.length,cur=Q.questions[q.i],people=Object.entries(T.students).filter(([K])=>!isOwnSid(K));
+  let meta='',ctl='',body='';
+  if(q.phase==='lobby'){
+    meta=people.length+' joined';
+    ctl=`<label class="text-sm" for="qvDur">Seconds per question</label><select id="qvDur" class="field" style="width:auto">${[10,20,30,45,60].map(d=>`<option ${d===q.dur?'selected':''}>${d}</option>`).join('')}</select><button class="btn btn-p" data-qa="start">Start quiz</button>`;
+    body=`<p>Ask students to open the student link and type their name. Joined so far:</p><p class="mt-2" style="font-size:1.2rem">${people.length?people.map(([,s])=>esc(s.name)).join(', '):'Nobody yet'}</p>`;
+  }else if(q.phase==='end'){
+    meta='Final results';ctl=`<button class="btn btn-p" data-qa="lib">Back to library</button>`;body='<p>The quiz is finished. Final leaderboard below.</p>';
+  }else{
+    const {c,tot}=qCounts();
+    meta=`Question ${q.i+1} of ${N}. ${tot} of ${people.length} answered.`;
+    ctl=(q.phase==='q'?`<span id="qvTimer" class="mode draft"></span><button class="btn btn-p" data-qa="reveal">Show answer</button>`:`<button class="btn btn-p" data-qa="next">${q.i+1<N?'Next question':'Finish quiz'}</button>`)+`<button class="btn" data-qa="end">End quiz</button>`;
+    body=`<p style="font-size:1.6rem;line-height:1.3;font-weight:700">${q.i+1}. ${esc(cur.q)}</p><div class="grid gap-3 mt-3 sm:grid-cols-2">${cur.o.map((o,i)=>`<div class="qopt ${q.phase==='r'&&i!==cur.c?'dim':''}" style="background:${OCOL[i]}"><span style="font-size:1.5rem">${OSH[i]}</span><span style="flex:1">${esc(o)}</span>${q.phase==='r'?`<span>${i===cur.c?'✔ ':''}${c[i]}</span>`:''}</div>`).join('')}</div>`;
+  }
+  $('#qvTitle').textContent=Q.title;$('#qvMeta').textContent=meta;$('#qvCtl').innerHTML=ctl;$('#qvBody').innerHTML=body;
+  const show=(q.phase==='r'||q.phase==='end')&&q.lb;
+  $('#qvBoard').classList.toggle('hidden',!show);
+  if(show)$('#qvBoard').innerHTML=lbHtml(q.lb,q.phase==='end'?10:5);
+  updTimers();
+}
+function lbHtml(lb,n){return `<h2>Leaderboard</h2><ol class="mt-2 space-y-1">${(lb||[]).slice(0,n).map((r,i)=>`<li class="flex items-center gap-3" style="font-size:1.2rem"><b style="width:2rem">${i+1}</b><span class="flex-1">${esc(r.n)}</span><b>${r.s}</b></li>`).join('')||'<li>No answers yet</li>'}</ol>`}
+$('#tQuizView').addEventListener('change',e=>{if(e.target.id==='qvDur'&&T.quiz)T.quiz.dur=+e.target.value});
+$('#tQuizView').addEventListener('click',e=>{
+  const b=e.target.closest('[data-qa]');if(!b||!T.quiz)return;const a=b.dataset.qa,q=T.quiz;
+  if(a==='start'){q.dur=+($('#qvDur').value)||20;q.i=0;beginQ()}
+  else if(a==='reveal')revealQ();
+  else if(a==='next'){if(q.i+1<QUIZ[q.id].questions.length){q.i++;beginQ()}else finishQ()}
+  else if(a==='end')finishQ();
+  else if(a==='lib'){T.mode='home';T.quiz=null;showTView();push()}
+});
+
+function renderQuizStudent(){
+  const q=S.quiz,Q=QUIZ[q.id],N=Q.questions.length,cur=Q.questions[q.i]||Q.questions[0],pid='q:'+q.id+':'+q.i,mine=my.qa[pid];
+  const rank=(q.lb||[]).findIndex(r=>normName(r.n)===normName(myName));let h='';
+  if(q.phase==='lobby')h=`<div class="card p-6 text-center"><h2>${esc(Q.title)}</h2><p class="mt-2">You’re in! Get ready. Your teacher will start the quiz soon.</p></div>`;
+  else if(q.phase==='q'){
+    const over=srvNow()>q.t0+q.dur*1000;
+    h=`<div class="card p-4"><div class="flex justify-between items-center gap-2"><span class="mode draft">Question ${q.i+1} of ${N}</span><span class="mode draft" id="sqTimer"></span></div><p class="mt-3" style="font-size:1.5rem;line-height:1.3;font-weight:700">${esc(cur.q)}</p></div>`;
+    h+=(mine==null&&!over)?`<div class="grid gap-3 sm:grid-cols-2">${cur.o.map((o,i)=>`<button class="qopt" style="background:${OCOL[i]}" data-qans="${i}"><span style="font-size:1.5rem">${OSH[i]}</span><span style="flex:1">${esc(o)}</span></button>`).join('')}</div>`:`<div class="card p-5 text-center" style="font-size:1.3rem">${mine!=null?'✔ Answer sent. Waiting for the others…':'Time’s up!'}</div>`;
+  }else if(q.phase==='r'){
+    const ok=mine!=null&&+mine===cur.c;
+    h=`<div class="card p-5 text-center"><span class="mode ${ok?'done':'draft'}" style="font-size:1.3rem">${mine==null?'No answer':ok?'✔ Correct!':'✘ Not quite'}</span><p class="mt-3" style="font-size:1.3rem">Answer: <b>${esc(cur.o[cur.c])}</b></p>${rank>=0?`<p class="mt-2">You are <b>#${rank+1}</b> with <b>${q.lb[rank].s}</b> points.</p>`:''}</div><div class="card p-4">${lbHtml(q.lb,5)}</div>`;
+  }else h=`<div class="card p-5 text-center"><h2>Quiz finished!</h2>${rank>=0?`<p class="mt-2" style="font-size:1.3rem">You finished <b>#${rank+1}</b> with <b>${q.lb[rank].s}</b> points.</p>`:''}</div><div class="card p-4">${lbHtml(q.lb,10)}</div>`;
+  $('#sQuiz').innerHTML=h;updTimers();
+}
+function answerQ(i){
+  const q=S.quiz;if(!q||q.phase!=='q')return;const pid='q:'+q.id+':'+q.i;
+  if(my.qa[pid]!=null||srvNow()>q.t0+q.dur*1000)return;
+  my.qa[pid]=i;saveMy();ch.postMessage({t:'ans',sid,name:myName,pid,text:String(i)});renderQuizStudent();
+}
+$('#sQuiz').addEventListener('click',e=>{const b=e.target.closest('[data-qans]');if(b)answerQ(+b.dataset.qans)});
+let wasOver=false;
+function updTimers(){
+  const q=role==='teacher'?T.quiz:S.quiz;if(!q||q.phase!=='q')return;
+  const left=Math.max(0,Math.ceil((q.t0+q.dur*1000-srvNow())/1000)),el=$(role==='teacher'?'#qvTimer':'#sqTimer');
+  if(el)el.textContent='⏱ '+left+' s';
+}
+setInterval(()=>{
+  if(role==='teacher'&&T.mode==='quiz'&&T.quiz&&T.quiz.phase==='q'){
+    if(srvNow()>=T.quiz.t0+T.quiz.dur*1000+2500)revealQ();else updTimers();
+  }
+  if(role==='student'&&S.mode==='quiz'&&S.quiz&&S.quiz.phase==='q'){
+    const over=srvNow()>S.quiz.t0+S.quiz.dur*1000;
+    if(over!==wasOver){wasOver=over;renderQuizStudent()}else updTimers();
+  }
+},500);
+
+/* ================= NO PASTE FOR STUDENTS ================= */
+(function(){
+  const ta=$('#sAns'),say=()=>toast('Pasting is turned off. Please type your answer.');
+  ['paste','drop','cut','copy','dragstart','contextmenu'].forEach(ev=>ta.addEventListener(ev,e=>{e.preventDefault();if(ev==='paste'||ev==='drop')say()}));
+  ta.addEventListener('beforeinput',e=>{
+    if(/^insertFrom(Paste|PasteAsQuotation|Drop|Yank)$/.test(e.inputType)||(e.inputType==='insertText'&&e.data&&e.data.length>30)){e.preventDefault();say()}
+  });
+  document.addEventListener('copy',e=>{if(role==='student')e.preventDefault()});
+  document.addEventListener('cut',e=>{if(role==='student')e.preventDefault()});
+})();
+
+/* ================= DRAG AND DROP (teacher) ================= */
+const okFile=f=>f&&(f.type==='application/pdf'||/^image\/(png|jpeg)$/.test(f.type));
+const hasFiles=e=>!!(e.dataTransfer&&[...e.dataTransfer.types].includes('Files'));
+async function dropFiles(files){
+  const all=[...files].filter(okFile);
+  if(!all.length){toast('Drop a PDF, PNG or JPG file');return}
+  const pdf=all.find(f=>f.type==='application/pdf');
+  if(pdf){await loadFile(pdf);return}
+  for(let i=0;i<all.length;i++){
+    if(i>0){T.pages.splice(T.cur+1,0,{id:uid(),bg:null,ins:''});T.cur++;renderT()}
+    await loadFile(all[i]);
+  }
+}
+(function(){
+  const zone=$('#paneA'),strip=$('#tStrip');let dragPg=null;
+  zone.addEventListener('dragover',e=>{if(role==='teacher'&&hasFiles(e)){e.preventDefault();zone.classList.add('dropping')}});
+  zone.addEventListener('dragleave',e=>{if(!zone.contains(e.relatedTarget))zone.classList.remove('dropping')});
+  zone.addEventListener('drop',e=>{zone.classList.remove('dropping');if(role==='teacher'&&hasFiles(e)){e.preventDefault();dropFiles(e.dataTransfer.files)}});
+  ['dragover','drop'].forEach(ev=>document.addEventListener(ev,e=>{if(hasFiles(e))e.preventDefault()}));
+  strip.addEventListener('click',e=>{const b=e.target.closest('[data-pg]');if(b)goto(+b.dataset.pg)});
+  strip.addEventListener('dragstart',e=>{const b=e.target.closest('[data-pg]');if(!b)return;dragPg=+b.dataset.pg;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain','page')});
+  strip.addEventListener('dragover',e=>{const b=e.target.closest('[data-pg]');if(b&&(dragPg!==null||hasFiles(e))){e.preventDefault();b.classList.add('over')}});
+  strip.addEventListener('dragleave',e=>{const b=e.target.closest('[data-pg]');if(b)b.classList.remove('over')});
+  strip.addEventListener('drop',e=>{
+    const b=e.target.closest('[data-pg]');if(!b)return;e.preventDefault();b.classList.remove('over');const to=+b.dataset.pg;
+    if(hasFiles(e)){goto(to);dropFiles(e.dataTransfer.files);return}
+    if(dragPg===null||dragPg===to){dragPg=null;return}
+    const id=T.pages[T.cur].id,[pg]=T.pages.splice(dragPg,1);T.pages.splice(to,0,pg);T.cur=T.pages.findIndex(q=>q.id===id);dragPg=null;renderT();push();
+  });
+  strip.addEventListener('dragend',()=>{dragPg=null;strip.querySelectorAll('.over').forEach(x=>x.classList.remove('over'))});
+})();
+
+/* ================= TIMER ================= */
+const fmt=n=>Math.floor(n/60)+':'+String(n%60).padStart(2,'0');
+function beep(){try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=.15;o.start();o.stop(a.currentTime+.6)}catch(e){}}
+let beepedFor=0;
+$('#tStart').onclick=()=>{const m=Math.max(1,Math.min(180,parseInt($('#tMin').value)||5));T.timer={end:srvNow()+m*60000,dur:m*60};push();toast('Timer started: '+m+' min')};
+$('#tStop').onclick=()=>{T.timer=null;push()};
+setInterval(()=>{
+  const t=role==='teacher'?T.timer:(S.pages.length?S.timer:null),b=$('#timerBox');
+  if(!t){b.classList.add('hidden');return}
+  const left=Math.ceil((t.end-srvNow())/1000);
+  if(left<-600){b.classList.add('hidden');return}
+  b.classList.remove('hidden');b.classList.toggle('low',left>0&&left<=30);b.classList.toggle('done',left<=0);
+  if(left>0)b.textContent='⏱ '+fmt(left);
+  else{b.textContent='Time’s up!';if(beepedFor!==t.end&&left>-6){beepedFor=t.end;beep()}}
+},250);
+
+/* ================= RESIZABLE SPLIT ================= */
+let splitR=0.4,prevSplit=0.4;try{splitR=parseFloat(localStorage.getItem('lw_split2'))||0.4}catch(e){}
+function applySplit(){
+  document.documentElement.style.setProperty('--hdr',document.querySelector('body>header').offsetHeight+'px');
+  const box=$('#split'),bar=$('#splitBar'),A=$('#paneA'),h=box.clientHeight-bar.offsetHeight;if(h<=0)return;
+  const MIN=Math.min(120,h/3);splitR=Math.min(Math.max(splitR,MIN/h),1-MIN/h);
+  A.style.flex=`0 0 ${Math.round(h*splitR)}px`;
+}
+(function(){
+  const box=$('#split'),bar=$('#splitBar');
+  const save=()=>{try{localStorage.setItem('lw_split2',splitR)}catch(e){}};
+  bar.addEventListener('pointerdown',e=>{bar.setPointerCapture(e.pointerId);bar.classList.add('drag');document.body.classList.add('dragging');bar.dragging=true});
+  bar.addEventListener('pointermove',e=>{if(!bar.dragging)return;const r=box.getBoundingClientRect(),h=box.clientHeight-bar.offsetHeight;splitR=(e.clientY-r.top-bar.offsetHeight/2)/h;applySplit()});
+  const end=()=>{if(!bar.dragging)return;bar.dragging=false;bar.classList.remove('drag');document.body.classList.remove('dragging');save()};
+  bar.addEventListener('pointerup',end);bar.addEventListener('pointercancel',end);
+  bar.addEventListener('dblclick',()=>{splitR=0.4;applySplit();save()});
+  bar.addEventListener('keydown',e=>{if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();splitR+=e.key==='ArrowUp'?-0.05:0.05;applySplit();save()}});
+  window.addEventListener('resize',applySplit);
+  let focused=false;
+  $('#tFocus').onclick=()=>{if(!focused){prevSplit=splitR;splitR=0;focused=true}else{splitR=prevSplit;focused=false}applySplit();$('#tFocus').textContent=focused?'Show activity':'Expand answers'};
+  bar.addEventListener('pointerdown',()=>{focused=false;$('#tFocus').textContent='Expand answers'});
+})();
+
+/* ================= ROLE + WIRING ================= */
+ch.onmessage=e=>{
+  const m=e.data,mt=e.meta;
+  if(mt){
+    if(mt.isMe&&mt.sameTab){if(role==='student'&&m.t==='join')netId=mt.peer;return}
+    if(role==='teacher'&&m.sid)m.sid=mt.peer;
+  }
+  if(role==='teacher')teacherReceive(m);else studentReceive(m)
+};
+function setRole(r){
+  if(linkMode&&r==='teacher')return;
+  if(r==='teacher'&&!RM.key){if(TC){RM={code:TC.code,key:TC.key,name:TC.name};up=lsGet('lw_up_'+TC.code,{});lastSaved=''}else{showTL();return}}
+  if(role==='student'&&r==='teacher'&&myName)ch.postMessage({t:'leave',sid});
+  role=r;sessionStorage.setItem('lw_role',r);
+  $('#roleT').setAttribute('aria-pressed',r==='teacher');$('#roleS').setAttribute('aria-pressed',r==='student');
+  $('#student').classList.toggle('hidden',r!=='student');showTView();
+  if(r==='teacher'){renderT();applySplit();$('#roomCode').textContent=RM.code;startNet();push()}
+  else{netStop();S.pages=[];S.view=0;shownPid=null;stRaw=null;stV=-1;renderS();RM.code=RM.code||localStorage.getItem('lw_room')||'';$('#roomCode').textContent=RM.code||'—';if(myName&&RM.code){ident();join()}else needName()}
+}
+$('#roleT').onclick=()=>setRole('teacher');$('#roleS').onclick=()=>setRole('student');
+$('#shareBtn').onclick=async()=>{const link=location.origin+location.pathname+'?room='+encodeURIComponent(RM.code);try{await navigator.clipboard.writeText(link);toast('Student link copied: '+link)}catch(e){toast('Student link: '+link)}};
+window.addEventListener('pagehide',()=>{if(role==='student'&&myName)ch.postMessage({t:'leave',sid})});
+function showTL(){
+  $('#tlName').value=(TC&&TC.name)||localStorage.getItem('lw_tname')||'';
+  $('#tlCont').classList.toggle('hidden',!TC);$('#tlNew').classList.toggle('btn-p',!TC);$('#tlContCode').textContent=TC?'('+TC.code+')':'';
+  $('#tlErr').textContent='';$('#tlModal').classList.remove('hidden');$('#tlName').focus();
+}
+$('#pickT').onclick=()=>{$('#roleModal').classList.add('hidden');showTL()};
+$('#tlBack').onclick=()=>{$('#tlModal').classList.add('hidden');$('#roleModal').classList.remove('hidden')};
+async function enterRoom(c,k,n){
+  const er=$('#tlErr');er.textContent='Opening your room\u2026';
+  try{
+    const r=await rpc('teacher_open',{p_code:c,p_key:k});
+    if(r==='denied')return 'denied';
+    TC={code:c,key:k,name:n};localStorage.setItem('lw_tcreds',JSON.stringify(TC));localStorage.setItem('lw_tname',n);
+    RM={code:c,key:k,name:n};up=lsGet('lw_up_'+c,{});lastSaved='';
+    $('#tlModal').classList.add('hidden');setRole('teacher');return 'ok';
+  }catch(e){er.textContent=SB.url.includes('PASTE')?'The server isn\u2019t set up yet. See README.':'Couldn\u2019t reach the server. Check your connection.';return 'err'}
+}
+$('#tlCont').onclick=()=>enterRoom(TC.code,TC.key,$('#tlName').value.trim().slice(0,30)||TC.name);
+$('#tlNew').onclick=async()=>{
+  const n=$('#tlName').value.trim().slice(0,30);
+  if(n.length<2){$('#tlErr').textContent='Please type your name first.';$('#tlName').focus();return}
+  const slug=(n.toUpperCase().replace(/[^A-Z0-9]/g,'')||'ROOM').slice(0,10);
+  const k=[...crypto.getRandomValues(new Uint8Array(16))].map(x=>x.toString(16).padStart(2,'0')).join('');
+  for(let i=0;i<4;i++){const r=await enterRoom(slug+'-'+(1000+Math.floor(Math.random()*9000)),k,n);if(r!=='denied')return}
+  $('#tlErr').textContent='Couldn\u2019t create a room. Please try again.';
+};
+$('#pickS').onclick=()=>{$('#roleModal').classList.add('hidden');setRole('student')};
+if(linkMode){$('#roleSeg').classList.add('hidden');$('#shareBtn').classList.add('hidden')}
+if(role)setRole(role);else{$('#teacher').classList.add('hidden');$('#roleModal').classList.remove('hidden')}
+if(RM.key)up=lsGet('lw_up_'+RM.code,{});
+if(SB.url.includes('PASTE'))$('#netStat').textContent='Not set up';
 </script>
 </body>
 </html>
