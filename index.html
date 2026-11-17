@@ -64,6 +64,10 @@ img.rounded{background:#fffbe0}
 .chip{padding:.1rem .55rem;min-width:2.2rem;cursor:grab}
 .chip.over,.dropping{outline:3px dashed var(--acc);outline-offset:-6px}
 #paneA.dropping{outline-offset:-8px}
+.qopt{display:flex;align-items:center;gap:.75rem;padding:1rem;border-radius:10px;color:#fff;font:inherit;font-weight:700;font-size:1.25rem;border:3px solid var(--pencil);box-shadow:3px 4px 0 rgba(0,0,0,.25);text-align:left;width:100%}
+button.qopt{cursor:pointer}
+button.qopt:active{transform:translate(1px,1px);box-shadow:none}
+.qopt.dim{opacity:.3}
 #split{height:max(420px,calc(100vh - var(--hdr,4.5rem) - 2rem))}
 #split{height:max(420px,calc(100dvh - var(--hdr,4.5rem) - 2rem))}
 #splitBar{height:14px;flex:none;cursor:row-resize;display:flex;align-items:center;justify-content:center;touch-action:none;border-radius:6px}
@@ -82,6 +86,7 @@ canvas{touch-action:none;width:100%;background:#fffbe0;border:2px dashed var(--p
   </div>
   <div id="timerBox" class="timer hidden" role="timer"></div>
   <div class="flex items-center gap-3">
+    <button class="btn hidden" id="libBtn">Library</button>
     <button class="btn" id="shareBtn">Copy room link</button>
     <div class="seg" id="roleSeg" role="group" aria-label="Switch role">
       <button id="roleT" aria-pressed="true">Teacher mode</button>
@@ -89,6 +94,21 @@ canvas{touch-action:none;width:100%;background:#fffbe0;border:2px dashed var(--p
     </div>
   </div>
 </header>
+
+<!-- LIBRARY -->
+<main id="home" class="hidden p-4 max-w-4xl mx-auto"></main>
+
+<!-- QUIZ HOST -->
+<main id="tQuizView" class="hidden p-4 max-w-5xl mx-auto space-y-4">
+  <div class="card p-4">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div><h2 id="qvTitle"></h2><div id="qvMeta" class="text-sm" style="color:var(--mute)"></div></div>
+      <div class="flex flex-wrap items-center gap-2" id="qvCtl"></div>
+    </div>
+    <div id="qvBody" class="mt-3"></div>
+  </div>
+  <div id="qvBoard" class="card p-4 hidden"></div>
+</main>
 
 <!-- TEACHER -->
 <main id="teacher" class="grid gap-4 p-4 lg:grid-cols-[320px_1fr] max-w-[1400px] mx-auto">
@@ -157,6 +177,7 @@ canvas{touch-action:none;width:100%;background:#fffbe0;border:2px dashed var(--p
 <main id="student" class="hidden p-4 max-w-6xl mx-auto space-y-4">
   <div id="sMsg" class="hidden card p-3" style="border-color:var(--acc)"></div>
   <div id="sWait" class="card p-6 text-center" style="color:var(--mute)"><span id="sWaitTxt">Waiting for your teacher to open this room…</span></div>
+  <div id="sQuiz" class="hidden space-y-4"></div>
   <div id="sBody" class="hidden space-y-4">
     <div class="flex flex-wrap items-center gap-2" id="sTabs"></div>
     <div id="sBack" class="hidden card p-2 px-3 text-sm flex items-center justify-between">
@@ -263,6 +284,13 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const uid=()=>Math.random().toString(36).slice(2,9);
 /* ================= SUPABASE TRANSPORT (replaces tab/room sync) ================= */
+const QUIZ={"a2c4s1":{"title":"Section 1 Review Quiz","questions":[{"q":"Where do you put your money?","o":["The hotel","The bank","The museum","The park"],"c":1},{"q":"Where do you buy stamps?","o":["The hospital","The post office","The college","The building"],"c":1},{"q":"Which place is a large area with many houses?","o":["Downtown","The playground","The map","The neighborhood"],"c":3},{"q":"Where can you buy a book?","o":["The bookstore","The gas station","The police station","The church"],"c":0},{"q":"What do you use to find a street?","o":["The map","The pool","The building","The hospital"],"c":0},{"q":"Which word means there is a lot of sound?","o":["Busy","Closed","Noisy","Open"],"c":2},{"q":"Where do you go when you are sick?","o":["The museum","The post office","The hospital","The bank"],"c":2},{"q":"Where are the police?","o":["The fire station","The police station","The college","The playground"],"c":1},{"q":"Who helps when there is a fire?","o":["The university","The neighborhood","The hotel","The fire department"],"c":3},{"q":"Where do you sleep on vacation?","o":["The church","The hotel","The building","The park"],"c":1},{"q":"What is a tall structure with floors?","o":["The building","Downtown","The map","The neighborhood"],"c":0},{"q":"Which word is the opposite of closed?","o":["Busy","Noisy","Open","To close"],"c":2},{"q":"Where do young adults go to study?","o":["The university","The playground","The bank","The gas station"],"c":0},{"q":"Which area has the most tall buildings and shops?","o":["The park","The church","Downtown","The neighborhood"],"c":2},{"q":"If a store is not open, it is...","o":["Closed","Noisy","Busy","Open"],"c":0},{"q":"Where can you swim?","o":["The post office","The swimming pool","The museum","The building"],"c":1},{"q":"Where do children play outside?","o":["The bank","The hospital","The playground","The police station"],"c":2},{"q":"What is a beautiful area with grass and trees?","o":["The park","Downtown","The gas station","The map"],"c":0},{"q":"Where do you get gas for a car?","o":["The hotel","The gas station","The post office","The fire station"],"c":1},{"q":"If there are too many cars and people, the city is...","o":["Open","Closed","Busy","Noisy"],"c":2},{"q":"What is a place where you look at old art and history?","o":["The pool","The neighborhood","The college","The museum"],"c":3},{"q":"What is another word for a cathedral?","o":["The hospital","The building","The university","The church"],"c":3},{"q":"What do you call the people and houses around where you live?","o":["The neighborhood","Downtown","The park","The playground"],"c":0},{"q":"What do we look at to not get lost?","o":["The bookshop","The map","The bank","The post office"],"c":1},{"q":"Where do you find a doctor?","o":["The hospital","The police station","The fire department","The museum"],"c":0},{"q":"Where do you buy a magazine to read?","o":["The church","The gas station","The hotel","The bookshop"],"c":3},{"q":"If a street has a lot of loud cars, it is...","o":["Noisy","Open","Busy","Closed"],"c":0},{"q":"Where do firefighters work?","o":["The fire station","The police station","The bank","The building"],"c":0},{"q":"What place has water for summer fun?","o":["The park","The swimming pool","The neighborhood","The playground"],"c":1},{"q":"What do we call the center of the city?","o":["The map","Downtown","The university","The college"],"c":1}]},"a2c4s2":{"title":"Section 2 Review Quiz","questions":[{"q":"I do not know where I am. I am ____.","o":["left","lost","bridge","drove"],"c":1},{"q":"When you are lost, you should ____.","o":["ask for directions","the block","to the east","drove"],"c":0},{"q":"The best question to ask is: “____ the hospital?”","o":["How do I get to","To the north","On the right side","To take a right"],"c":0},{"q":"The opposite of right is ____.","o":["north","cross","left","block"],"c":2},{"q":"Please ____ at the traffic light.","o":["to the east","take a left","lost","bridge"],"c":1},{"q":"You need to ____ to find the store.","o":["the corner","go right","to the south","drove"],"c":1},{"q":"The opposite of south is ____.","o":["east","north","west","left"],"c":1},{"q":"The sun comes up ____.","o":["to the east","to the north","to the west","to the south"],"c":0},{"q":"Drive straight ____.","o":["to the corner","to the north","on the left side","the bridge"],"c":1},{"q":"Walk around ____ to find the café.","o":["the block","drove","ask for directions","north"],"c":0},{"q":"A block is made of many ____.","o":["rivers","lefts","buildings","compasses"],"c":2},{"q":"Walk one ____ and turn left.","o":["block","to be lost","cross","drove"],"c":0},{"q":"Look both ways before you ____ the street.","o":["cross","drive","ask","right"],"c":0},{"q":"Yesterday, I ____ my car to work.","o":["cross","drive","drove","bridge"],"c":2},{"q":"It is faster to ____ than to walk.","o":["be lost","drive","the corner","south"],"c":1},{"q":"The bank is ____.","o":["on the left side","to take a left","to go right","left"],"c":0},{"q":"The hospital is ____.","o":["on the right side","right","to go left","to cross"],"c":0},{"q":"I want to ____ here.","o":["take a right","the block","on the left side","east"],"c":0},{"q":"We need to cross ____.","o":["the corner","the bridge","the block","the south"],"c":1},{"q":"The car goes over ____.","o":["the bridge","the corner","the left side","drove"],"c":0},{"q":"A bridge goes over a ____.","o":["building","street or river","right","compass"],"c":1},{"q":"Turn right at ____.","o":["the corner","the north","to be lost","the block"],"c":0},{"q":"Meet me at ____ of 1st Street and Main Street.","o":["the bridge","the block","the corner","the east"],"c":2},{"q":"The stop sign is on ____.","o":["the bridge","the corner","drove","to go left"],"c":1},{"q":"She did not know the way, so she was ____.","o":["cross","lost","left","corner"],"c":1},{"q":"He ____ to the store yesterday.","o":["drive","drove","cross","south"],"c":1},{"q":"They ____ because they didn’t have a map.","o":["are lost","drove","cross","right"],"c":0},{"q":"“____ get to the park?”","o":["How do I","To the","On the","Ask for"],"c":0},{"q":"First, walk one ____.","o":["block","cross","drove","left"],"c":0},{"q":"Then, ____ and it is on the left side.","o":["take a right","corner","bridge","north"],"c":0}]},"a2c4s3":{"title":"Section 3 Review Quiz","questions":[{"q":"I need to go underground to ride the ____.","o":["car","bus","subway","taxi"],"c":2},{"q":"You wait for the bus at the bus ____.","o":["station","stop","garage","ticket"],"c":1},{"q":"I drive my ____ to work every day.","o":["train","car","subway","block"],"c":1},{"q":"A large place where many trains arrive and leave is the train ____.","o":["corner","station","bridge","sign"],"c":1},{"q":"A short stop for a train is called a train ____.","o":["stop","lot","garage","road"],"c":0},{"q":"To travel over a river, you drive on a ____.","o":["block","bridge","roundabout","corner"],"c":1},{"q":"Cars drive on the ____.","o":["subway","block","road","train"],"c":2},{"q":"You must stop your car at a red ____.","o":["traffic light","price","block","entrance"],"c":0},{"q":"A circle in the road where cars drive around is a ____.","o":["corner","bridge","street sign","roundabout"],"c":3},{"q":"A building where you pay to leave your car is a parking ____.","o":["lot","stop","garage","station"],"c":2},{"q":"When there are too many cars on the street, there is bad ____.","o":["traffic","price","block","bridge"],"c":0},{"q":"You must pay the ____ to ride the bus.","o":["sign","entrance","price","exit"],"c":2},{"q":"I do not have a car. I will ____ to the store.","o":["park","drive","walk","break down"],"c":2},{"q":"The boy ____ fast to catch the bus.","o":["ran","parked","drove","walked"],"c":0},{"q":"You need to ____ the street at the stop sign.","o":["enter","cross","get off","exit"],"c":1},{"q":"Yesterday, I ____ my car to the city.","o":["walk","drove","turn","run"],"c":1},{"q":"Oh no! My car will not start. It ____.","o":["broke down","got on","crossed","looked out"],"c":0},{"q":"When you leave a building, you go through the ____.","o":["entrance","exit","stop","corner"],"c":1},{"q":"I don’t know where I am. I am ____.","o":["straight","lost","carefully","left"],"c":1},{"q":"The four directions are North, South, East, and ____.","o":["Left","Right","West","Straight"],"c":2},{"q":"“Excuse me, can I ask for ____?”","o":["exits","directions","blocks","prices"],"c":1},{"q":"Go to the corner and take a ____.","o":["straight","left","light","past","across"],"c":1},{"q":"Don’t turn. Just go ____ ahead.","o":["straight","right","lost","east"],"c":0},{"q":"The grocery store is ____ the street from the bank.","o":["into","through","across","under"],"c":2},{"q":"We walked ____ the park to get home.","o":["through","on","at","into"],"c":0},{"q":"Please drive ____ in the rain.","o":["quickly","carefully","slowly","around"],"c":1},{"q":"We waited ____ the bus stop.","o":["at","in","on","through"],"c":0},{"q":"The turtle moves very ____.","o":["carefully","quickly","straight","slowly"],"c":3},{"q":"It is time to leave the train. We need to ____.","o":["get on","enter","get off","park"],"c":2},{"q":"“____ way do I go?”","o":["Where","How","Which","Who"],"c":2}]}};
+const rng=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
+const LIB=[{id:'a2c4',level:'A2',title:'Chapter 4: Around the city',sections:[
+  {id:'a2c4s1',title:'Section 1: Around the city',pages:rng(4,41),quiz:'a2c4s1'},
+  {id:'a2c4s2',title:'Section 2: Navigating the City',sub:'Vocabulary, Directions, and Getting Around.',pages:rng(52,77),quiz:'a2c4s2'},
+  {id:'a2c4s3',title:'Section 3: Around the city',sub:'Getting Around Town.',pages:rng(89,109),quiz:'a2c4s3'}]}];
+const imgSrc=b=>b&&b.startsWith('url:')?b.slice(4):b;
 const SB={url:'https://yivzqpevrcdazrgpfpas.supabase.co',key:'sb_publishable_nfyx78lzbJwqIBbMPGPUUQ_2n1GrjV-'};
 SB.url=SB.url.trim().replace(/\/rest\/v1\/?$/,'').replace(/\/+$/,'');
 let netId=null,netTimer=null,netBusy=false,tick=0,off=0;
@@ -281,7 +309,8 @@ const queue=f=>{sq=sq.then(f).catch(e=>{console.error(e);setNet(false);if(role==
 const setWait=t=>{const e=document.querySelector('#sWaitTxt');if(e)e.textContent=t};
 const setNet=ok=>{const n=document.querySelector('#netStat');if(n&&!SB.url.includes('PASTE'))n.textContent=ok?'Live':'Reconnecting\u2026'};
 const ch={onmessage:null,postMessage(m){if(role==='teacher')teacherOut(m);else studentOut(m)}};
-function startNet(){netStop();tick=0;const f=async()=>{if(netBusy)return;netBusy=true;tick++;try{await(role==='teacher'?teacherTick():studentTick())}finally{netBusy=false}};f();netTimer=setInterval(f,2000)}
+async function syncClock(){try{const t=Date.now(),ms=await rpc('server_time',{});if(ms!=null&&!isNaN(+ms))off=+ms-(t+Date.now())/2}catch(e){}}
+function startNet(){netStop();tick=0;syncClock();const f=async()=>{if(netBusy)return;netBusy=true;tick++;try{await(role==='teacher'?teacherTick():studentTick())}finally{netBusy=false}};f();netTimer=setInterval(f,2000)}
 function netStop(){clearInterval(netTimer);netTimer=null}
 
 let rawBy={};
@@ -298,10 +327,10 @@ async function saveState(m){
   const k={p_code:RM.code,p_key:RM.key},pages=[];
   for(const p of m.pages){
     let bg=null;
-    if(p.bg){bg=hsig(p.bg);if(up[p.id]!==bg){try{await rpc('teacher_save_image',{...k,p_page:p.id,p_data:p.bg});up[p.id]=bg;lsSet('lw_up_'+RM.code,up)}catch(e){console.error(e);bg=null;toast('Couldn’t upload the picture for one page. It may be too large. Try a smaller file.')}}}
+    if(p.bg&&p.bg.startsWith('url:'))bg=p.bg;else if(p.bg){bg=hsig(p.bg);if(up[p.id]!==bg){try{await rpc('teacher_save_image',{...k,p_page:p.id,p_data:p.bg});up[p.id]=bg;lsSet('lw_up_'+RM.code,up)}catch(e){console.error(e);bg=null;toast('Couldn’t upload the picture for one page. It may be too large. Try a smaller file.')}}}
     pages.push({id:p.id,bg,ins:p.ins||'',txt:p.txt||''});
   }
-  const st={pages,cur:m.cur,reveal:m.reveal,open:!!m.open,timer:m.timer||null,teacher:m.teacher||'',anon:T.anon,clr},s=JSON.stringify(st);
+  const st={pages,cur:m.cur,reveal:m.reveal,open:!!m.open,timer:m.timer||null,teacher:m.teacher||'',mode:m.mode||'home',quiz:m.quiz||null,anon:T.anon,clr},s=JSON.stringify(st);
   if(s===lastSaved)return;
   await rpc('teacher_save',{...k,p_state:st});lastSaved=s;
 }
@@ -313,7 +342,7 @@ async function teacherTick(){
     r.students.forEach(x=>{const K=canon(x.sid,x.name);kOf[x.sid]=K;(rawBy[K]=rawBy[K]||[]).push(x.sid);const e=roster[K]||(roster[K]={sid:K,name:x.name,online:false});e.online=e.online||x.online;e.name=x.name});
     r.answers.sort((a,b)=>a.at<b.at?-1:a.at>b.at?1:0).forEach(a=>{
       const K=kOf[a.sid]||canon(a.sid,a.name);
-      emit({t:'ans',sid:K,name:a.name,pid:a.pid,text:a.txt});
+      emit({t:'ans',sid:K,name:a.name,pid:a.pid,text:a.txt,at:a.at});
       emit({t:'submit',sid:K,name:a.name,pid:a.pid,on:a.sub,text:a.txt});
       if(!since||a.at>since)since=a.at;
     });
@@ -333,7 +362,7 @@ function studentOut(m){
     for(const pid in my.sub)if(my.sub[pid])await rpc('student_submit',{...a,p_page:pid,p_on:true});
     startNet();
   });
-  else if(m.t==='ans'){ansP[m.pid]=m.text;clearTimeout(ansT);ansT=setTimeout(flushAns,600)}
+  else if(m.t==='ans'){if(String(m.pid).startsWith('q:'))queue(()=>rpc('student_save_text',{...a,p_page:m.pid,p_txt:m.text}));else{ansP[m.pid]=m.text;clearTimeout(ansT);ansT=setTimeout(flushAns,600)}}
   else if(m.t==='draw')queue(()=>rpc('student_save_draw',{...a,p_page:m.pid,p_draw:m.img||''}));
   else if(m.t==='submit'){
     clearTimeout(ansT);ansP={};
@@ -353,11 +382,11 @@ async function studentRefresh(){
 function emitState(){
   if(!stRaw||!stRaw.pages)return;
   if(!stRaw.open){emit({t:'state',pages:[],cur:0,reveal:false,timer:null,shared:{}});return}
-  const cur=stRaw.cur||0,pages=stRaw.pages.map(p=>({id:p.id,ins:p.ins,txt:p.txt,bg:p.bg?(imgs[p.id+p.bg]||null):null}));
-  emit({t:'state',pages,cur,reveal:!!stRaw.reveal,timer:stRaw.timer||null,shared:sharedC});
+  const cur=stRaw.cur||0,pages=stRaw.pages.map(p=>({id:p.id,ins:p.ins,txt:p.txt,bg:p.bg?(p.bg.startsWith('url:')?p.bg.slice(4):(imgs[p.id+p.bg]||null)):null}));
+  emit({t:'state',pages,cur,reveal:!!stRaw.reveal,timer:stRaw.timer||null,mode:stRaw.mode||'book',quiz:stRaw.quiz||null,shared:sharedC});
   [cur,Math.min(S.view,cur)].forEach(i=>{
     const p=stRaw.pages[i],key=p&&p.id+p.bg;
-    if(p&&p.bg&&!imgs[key]&&!loading[key]){loading[key]=1;rpc('get_image',{p_code:RM.code,p_page:p.id}).then(d=>{if(d){imgs[key]=d;emitState()}}).catch(()=>{loading[key]=0})}
+    if(p&&p.bg&&!p.bg.startsWith('url:')&&!imgs[key]&&!loading[key]){loading[key]=1;rpc('get_image',{p_code:RM.code,p_page:p.id}).then(d=>{if(d){imgs[key]=d;emitState()}}).catch(()=>{loading[key]=0})}
   });
 }
 async function studentTick(){
@@ -401,12 +430,12 @@ function shared(){
   T.pages.forEach(p=>{out[p.id]=list.map((s,i)=>({n:stName(s,i),t:(s.ans||{})[p.id]||'',d:(s.draw||{})[p.id]||''})).filter(x=>x.t||x.d)});
   return out;
 }
-function push(){ch.postMessage({t:'state',pages:T.pages,cur:T.cur,reveal:T.reveal,open:!!T.open,timer:T.timer||null,teacher:RM.name||'',shared:shared()});saveT()}
+function push(){ch.postMessage({t:'state',pages:T.pages,cur:T.cur,reveal:T.reveal,open:!!T.open,timer:T.timer||null,teacher:RM.name||'',mode:T.mode||'home',quiz:T.quiz||null,shared:shared()});saveT()}
 
 function renderPageInfo(){
   $('#tCount').textContent=`Page ${T.cur+1} of ${T.pages.length}`;
   $('#tPrev').disabled=T.cur===0;$('#tNext').disabled=T.cur===T.pages.length-1;
-  $('#tWs').innerHTML=page().bg?`<img src="${page().bg}" alt="Activity file for page ${T.cur+1}">`:`<p class="text-sm p-6 text-center" style="color:var(--mute);border:1px dashed var(--line);border-radius:8px">This page is blank. Drag a PDF or image here, use Upload Activity File, or type instructions below.</p>`;
+  $('#tWs').innerHTML=page().bg?`<img src="${imgSrc(page().bg)}" alt="Activity file for page ${T.cur+1}">`:`<p class="text-sm p-6 text-center" style="color:var(--mute);border:1px dashed var(--line);border-radius:8px">This page is blank. Drag a PDF or image here, use Upload Activity File, or type instructions below.</p>`;
   $('#tIns').value=page().ins||'';
 }
 function renderToggles(){
@@ -423,6 +452,7 @@ function renderGrid(){
   $('#tGrid').innerHTML=list.length?list.map(([id,s],i)=>{const t=(s.ans||{})[pid]||'',sub=(s.sub||{})[pid];
     return `<article class="card p-3 cursor-pointer" tabindex="0" role="button" data-open="${esc(id)}" aria-label="Open ${esc(stName(s,i))}’s work"><div class="flex items-center gap-2 mb-2"><span class="dot ${s.online?'on':''}"></span><b class="flex-1 truncate">${esc(stName(s,i))}${isOwnSid(id)?' (you, test view)':''}</b>${sub?'<span class="hl">Submitted</span>':(t?'<span class="text-xs" style="color:var(--mute)">Typing</span>':'')}</div>${t?`<p class="whitespace-pre-wrap text-sm line-clamp-5">${esc(t)}</p>`:`<p class="text-sm" style="color:var(--mute)">No answer yet</p>`}</article>`}).join(''):`<p class="text-sm" style="color:var(--mute)">Answers will appear here as students type.</p>`;
   renderStModal();
+  if(T.mode==='quiz'&&role==='teacher')renderQuizHost();
 }
 function renderStrip(){$('#tStrip').innerHTML=T.pages.map((p,i)=>`<button draggable="true" class="btn chip ${i===T.cur?'btn-p':''}" data-pg="${i}" aria-label="Page ${i+1}">${i+1}</button>`).join('')}
 const renderT=()=>{renderPageInfo();renderToggles();renderGrid();renderStrip()};
@@ -502,7 +532,7 @@ function teacherReceive(m){
     const s=T.students[m.sid]||(T.students[m.sid]={name:m.name,online:true,ans:{},draw:{}});
     s.name=m.name||s.name;s.online=true;s.ans=s.ans||{};s.draw=s.draw||{};s.sub=s.sub||{};
     if(m.t==='join'){Object.assign(s.ans,m.ans||{});Object.assign(s.draw,m.draw||{});Object.assign(s.sub,m.sub||{});push()}
-    if(m.t==='ans'){s.ans[m.pid]=m.text;if(T.reveal)debouncedPush();else saveT()}
+    if(m.t==='ans'){s.ans[m.pid]=m.text;if(m.at){s.at=s.at||{};s.at[m.pid]=m.at}if(T.reveal)debouncedPush();else saveT()}
     if(m.t==='draw'){s.draw[m.pid]=m.img;if(T.reveal)debouncedPush();else saveT()}
     if(m.t==='submit'){s.sub[m.pid]=m.on;if(m.on){s.ans[m.pid]=m.text;if(m.img)s.draw[m.pid]=m.img}saveT()}
     renderGrid();
@@ -518,18 +548,21 @@ function teacherReceive(m){
 
 /* ================= STUDENT ================= */
 let sid='';const normName=n=>String(n||'').trim().toLowerCase().replace(/\s+/g,' ').slice(0,30);
-let S={pages:[],cur:0,reveal:false,shared:null,view:0},myName=localStorage.getItem('lw_name')||'',my={ans:{},draw:{},sub:{},clr:{}},shownPid=null,kicked=false;
+let S={pages:[],cur:0,reveal:false,shared:null,view:0},myName=localStorage.getItem('lw_name')||'',my={ans:{},draw:{},sub:{},clr:{},qa:{}},shownPid=null,kicked=false;
 my.sub=my.sub||{};
 const saveMy=()=>lsSet('lw_my_'+(RM.code||'')+'_'+sid,my);
 function ident(){
   sid=(TC?'T-':'')+'s-'+normName(myName);
-  my=lsGet('lw_my_'+(RM.code||'')+'_'+sid,{});my.ans=my.ans||{};my.draw=my.draw||{};my.sub=my.sub||{};my.clr=my.clr||{};shownPid=null;
+  my=lsGet('lw_my_'+(RM.code||'')+'_'+sid,{});my.ans=my.ans||{};my.draw=my.draw||{};my.sub=my.sub||{};my.clr=my.clr||{};my.qa=my.qa||{};shownPid=null;
 }
 const joinMsg=()=>({t:'join',sid,name:myName,ans:my.ans,draw:my.draw,sub:my.sub});
 
 function renderS(){
-  const has=S.pages.length>0;$('#sWait').classList.toggle('hidden',has);$('#sBody').classList.toggle('hidden',!has);
-  if(!has)return;
+  const has=S.pages.length>0,home=has&&S.mode==='home',qz=has&&S.mode==='quiz'&&S.quiz&&QUIZ[S.quiz.id];
+  $('#sWait').classList.toggle('hidden',has&&!home);$('#sBody').classList.toggle('hidden',!has||home||!!qz);$('#sQuiz').classList.toggle('hidden',!qz);
+  if(home)setWait('Your teacher is choosing the next activity\u2026');
+  if(qz){renderQuizStudent();return}
+  if(!has||home)return;
   S.view=Math.min(S.view,S.cur);const p=S.pages[S.view];
   $('#sTabs').innerHTML=S.pages.slice(0,S.cur+1).map((q,i)=>`<button class="btn ${i===S.view?'btn-p':''}" data-v="${i}">${i===S.cur?'<span class="hl">LIVE</span> ':''}Page ${i+1}</button>`).join('');
   $('#sBack').classList.toggle('hidden',S.view===S.cur);
@@ -578,7 +611,7 @@ function studentReceive(m){
   if(m.t==='state'){
     const changed=S.pages.length&&m.cur!==S.cur;
     const wasLive=S.view===S.cur;
-    S={pages:m.pages,cur:m.cur,reveal:m.reveal,timer:m.timer||null,shared:m.shared,view:(wasLive||changed)?m.cur:S.view};
+    S={pages:m.pages,cur:m.cur,reveal:m.reveal,timer:m.timer||null,mode:m.mode||'book',quiz:m.quiz||null,shared:m.shared,view:(wasLive||changed)?m.cur:S.view};
     if(!kicked)renderS();
   }
   if(m.t==='teacher-up'&&myName&&!kicked)ch.postMessage(joinMsg());
@@ -601,6 +634,131 @@ document.addEventListener('paste',async e=>{
 });
 
 const hostImg=async d=>d;
+
+/* ================= LIBRARY AND QUIZ GAME ================= */
+const OCOL=['#e21b3c','#1368ce','#c58a00','#26890c','#7b3fbf'],OSH=['▲','◆','●','■','★'];
+let homeCh=null;
+function showTView(){
+  const m=T.mode||'home',t=role==='teacher';
+  $('#home').classList.toggle('hidden',!(t&&m==='home'));
+  $('#teacher').classList.toggle('hidden',!(t&&m==='book'));
+  $('#tQuizView').classList.toggle('hidden',!(t&&m==='quiz'));
+  $('#libBtn').classList.toggle('hidden',!(t&&m!=='home'));
+  if(!t)return;
+  if(m==='home')renderHome();
+  if(m==='quiz')renderQuizHost();
+  if(m==='book'){renderT();applySplit()}
+}
+function renderHome(){
+  const h=$('#home');
+  if(!homeCh){
+    h.innerHTML=`<h2>Library</h2><p class="text-sm mb-3" style="color:var(--mute)">Pick a chapter, or open your own blank notebook.</p><div class="grid gap-4 sm:grid-cols-2">${LIB.map(c=>`<button class="card p-4 text-left cursor-pointer" data-ch="${c.id}"><span class="hl">${c.level}</span><h2 class="mt-2">${esc(c.title)}</h2><p class="text-sm" style="color:var(--mute)">${c.sections.length} sections. Each has a notebook and a quiz game.</p></button>`).join('')}<button class="card p-4 text-left cursor-pointer" data-go="book"><h2>My own notebook</h2><p class="text-sm" style="color:var(--mute)">Upload PDFs or images and build your own pages.</p></button></div>`;
+  }else{
+    const c=LIB.find(x=>x.id===homeCh);
+    h.innerHTML=`<button class="btn" data-ch="">Back to library</button><h2 class="mt-3">${c.level}: ${esc(c.title)}</h2><div class="grid gap-4 mt-3">${c.sections.map(s=>`<div class="card p-4"><h2>${esc(s.title)}</h2><p class="text-sm" style="color:var(--mute)">${esc(s.sub||'')} ${s.pages.length} notebook pages, ${QUIZ[s.quiz].questions.length} quiz questions.</p><div class="flex flex-wrap gap-2 mt-3"><button class="btn btn-p" data-book="${s.id}">Open notebook</button><button class="btn" data-quiz="${s.quiz}">Start quiz game</button></div></div>`).join('')}</div>`;
+  }
+}
+$('#home').addEventListener('click',e=>{
+  const b=e.target.closest('[data-ch],[data-go],[data-book],[data-quiz]');if(!b)return;
+  if('ch' in b.dataset){homeCh=b.dataset.ch||null;renderHome()}
+  else if(b.dataset.go){T.mode='book';showTView();push()}
+  else if(b.dataset.book){
+    const s=LIB.flatMap(c=>c.sections).find(x=>x.id===b.dataset.book),pad=n=>String(n).padStart(3,'0');
+    T.pages=s.pages.map(n=>({id:s.id+'-'+pad(n),bg:'url:chapters/a2-ch4/s-'+pad(n)+'.jpg',ins:''}));T.cur=0;T.mode='book';T.quiz=null;showTView();push();toast('Notebook loaded: '+s.title);
+  }else if(b.dataset.quiz){T.quiz={id:b.dataset.quiz,i:0,phase:'lobby',dur:20,t0:0,t0s:{},lb:null};T.mode='quiz';showTView();push()}
+});
+$('#libBtn').onclick=()=>{T.mode='home';showTView();push()};
+
+function quizBoard(){
+  const q=T.quiz,Q=QUIZ[q.id].questions,rows=[];
+  Object.entries(T.students).forEach(([K,s])=>{
+    if(isOwnSid(K))return;let tot=0;
+    for(let i=0;i<=q.i;i++){
+      const pid='q:'+q.id+':'+i,a=s.ans&&s.ans[pid];if(a==null||a==='')continue;
+      const t0=q.t0s[i],at=s.at&&s.at[pid]?Date.parse(s.at[pid]):null,ms=q.dur*1000;
+      if(at&&t0&&at>t0+ms+3000)continue;
+      if(+a===Q[i].c){const el=at&&t0?Math.min(Math.max(at-t0,0),ms):ms/2;tot+=Math.round(1000*(1-el/(2*ms)))}
+    }
+    rows.push({n:s.name,s:tot});
+  });
+  return rows.sort((a,b)=>b.s-a.s||a.n.localeCompare(b.n));
+}
+function qCounts(){
+  const q=T.quiz,pid='q:'+q.id+':'+q.i,n=QUIZ[q.id].questions[q.i].o.length,c=Array(n).fill(0);let tot=0;
+  Object.entries(T.students).forEach(([K,s])=>{if(isOwnSid(K))return;const a=s.ans&&s.ans[pid];if(a!=null&&a!==''&&c[+a]!=null){c[+a]++;tot++}});
+  return{c,tot};
+}
+function beginQ(){const q=T.quiz;q.phase='q';q.t0=srvNow();q.t0s[q.i]=q.t0;q.lb=null;push();renderQuizHost()}
+function revealQ(){const q=T.quiz;if(!q||q.phase!=='q')return;q.lb=quizBoard();q.phase='r';push();renderQuizHost()}
+function finishQ(){const q=T.quiz;q.lb=quizBoard();q.phase='end';push();renderQuizHost()}
+function renderQuizHost(){
+  const q=T.quiz;if(!q||T.mode!=='quiz')return;
+  const Q=QUIZ[q.id],N=Q.questions.length,cur=Q.questions[q.i],people=Object.entries(T.students).filter(([K])=>!isOwnSid(K));
+  let meta='',ctl='',body='';
+  if(q.phase==='lobby'){
+    meta=people.length+' joined';
+    ctl=`<label class="text-sm" for="qvDur">Seconds per question</label><select id="qvDur" class="field" style="width:auto">${[10,20,30,45,60].map(d=>`<option ${d===q.dur?'selected':''}>${d}</option>`).join('')}</select><button class="btn btn-p" data-qa="start">Start quiz</button>`;
+    body=`<p>Ask students to open the student link and type their name. Joined so far:</p><p class="mt-2" style="font-size:1.2rem">${people.length?people.map(([,s])=>esc(s.name)).join(', '):'Nobody yet'}</p>`;
+  }else if(q.phase==='end'){
+    meta='Final results';ctl=`<button class="btn btn-p" data-qa="lib">Back to library</button>`;body='<p>The quiz is finished. Final leaderboard below.</p>';
+  }else{
+    const {c,tot}=qCounts();
+    meta=`Question ${q.i+1} of ${N}. ${tot} of ${people.length} answered.`;
+    ctl=(q.phase==='q'?`<span id="qvTimer" class="mode draft"></span><button class="btn btn-p" data-qa="reveal">Show answer</button>`:`<button class="btn btn-p" data-qa="next">${q.i+1<N?'Next question':'Finish quiz'}</button>`)+`<button class="btn" data-qa="end">End quiz</button>`;
+    body=`<p style="font-size:1.6rem;line-height:1.3;font-weight:700">${q.i+1}. ${esc(cur.q)}</p><div class="grid gap-3 mt-3 sm:grid-cols-2">${cur.o.map((o,i)=>`<div class="qopt ${q.phase==='r'&&i!==cur.c?'dim':''}" style="background:${OCOL[i]}"><span style="font-size:1.5rem">${OSH[i]}</span><span style="flex:1">${esc(o)}</span>${q.phase==='r'?`<span>${i===cur.c?'✔ ':''}${c[i]}</span>`:''}</div>`).join('')}</div>`;
+  }
+  $('#qvTitle').textContent=Q.title;$('#qvMeta').textContent=meta;$('#qvCtl').innerHTML=ctl;$('#qvBody').innerHTML=body;
+  const show=(q.phase==='r'||q.phase==='end')&&q.lb;
+  $('#qvBoard').classList.toggle('hidden',!show);
+  if(show)$('#qvBoard').innerHTML=lbHtml(q.lb,q.phase==='end'?10:5);
+  updTimers();
+}
+function lbHtml(lb,n){return `<h2>Leaderboard</h2><ol class="mt-2 space-y-1">${(lb||[]).slice(0,n).map((r,i)=>`<li class="flex items-center gap-3" style="font-size:1.2rem"><b style="width:2rem">${i+1}</b><span class="flex-1">${esc(r.n)}</span><b>${r.s}</b></li>`).join('')||'<li>No answers yet</li>'}</ol>`}
+$('#tQuizView').addEventListener('change',e=>{if(e.target.id==='qvDur'&&T.quiz)T.quiz.dur=+e.target.value});
+$('#tQuizView').addEventListener('click',e=>{
+  const b=e.target.closest('[data-qa]');if(!b||!T.quiz)return;const a=b.dataset.qa,q=T.quiz;
+  if(a==='start'){q.dur=+($('#qvDur').value)||20;q.i=0;beginQ()}
+  else if(a==='reveal')revealQ();
+  else if(a==='next'){if(q.i+1<QUIZ[q.id].questions.length){q.i++;beginQ()}else finishQ()}
+  else if(a==='end')finishQ();
+  else if(a==='lib'){T.mode='home';T.quiz=null;showTView();push()}
+});
+
+function renderQuizStudent(){
+  const q=S.quiz,Q=QUIZ[q.id],N=Q.questions.length,cur=Q.questions[q.i]||Q.questions[0],pid='q:'+q.id+':'+q.i,mine=my.qa[pid];
+  const rank=(q.lb||[]).findIndex(r=>normName(r.n)===normName(myName));let h='';
+  if(q.phase==='lobby')h=`<div class="card p-6 text-center"><h2>${esc(Q.title)}</h2><p class="mt-2">You’re in! Get ready. Your teacher will start the quiz soon.</p></div>`;
+  else if(q.phase==='q'){
+    const over=srvNow()>q.t0+q.dur*1000;
+    h=`<div class="card p-4"><div class="flex justify-between items-center gap-2"><span class="mode draft">Question ${q.i+1} of ${N}</span><span class="mode draft" id="sqTimer"></span></div><p class="mt-3" style="font-size:1.5rem;line-height:1.3;font-weight:700">${esc(cur.q)}</p></div>`;
+    h+=(mine==null&&!over)?`<div class="grid gap-3 sm:grid-cols-2">${cur.o.map((o,i)=>`<button class="qopt" style="background:${OCOL[i]}" data-qans="${i}"><span style="font-size:1.5rem">${OSH[i]}</span><span style="flex:1">${esc(o)}</span></button>`).join('')}</div>`:`<div class="card p-5 text-center" style="font-size:1.3rem">${mine!=null?'✔ Answer sent. Waiting for the others…':'Time’s up!'}</div>`;
+  }else if(q.phase==='r'){
+    const ok=mine!=null&&+mine===cur.c;
+    h=`<div class="card p-5 text-center"><span class="mode ${ok?'done':'draft'}" style="font-size:1.3rem">${mine==null?'No answer':ok?'✔ Correct!':'✘ Not quite'}</span><p class="mt-3" style="font-size:1.3rem">Answer: <b>${esc(cur.o[cur.c])}</b></p>${rank>=0?`<p class="mt-2">You are <b>#${rank+1}</b> with <b>${q.lb[rank].s}</b> points.</p>`:''}</div><div class="card p-4">${lbHtml(q.lb,5)}</div>`;
+  }else h=`<div class="card p-5 text-center"><h2>Quiz finished!</h2>${rank>=0?`<p class="mt-2" style="font-size:1.3rem">You finished <b>#${rank+1}</b> with <b>${q.lb[rank].s}</b> points.</p>`:''}</div><div class="card p-4">${lbHtml(q.lb,10)}</div>`;
+  $('#sQuiz').innerHTML=h;updTimers();
+}
+function answerQ(i){
+  const q=S.quiz;if(!q||q.phase!=='q')return;const pid='q:'+q.id+':'+q.i;
+  if(my.qa[pid]!=null||srvNow()>q.t0+q.dur*1000)return;
+  my.qa[pid]=i;saveMy();ch.postMessage({t:'ans',sid,name:myName,pid,text:String(i)});renderQuizStudent();
+}
+$('#sQuiz').addEventListener('click',e=>{const b=e.target.closest('[data-qans]');if(b)answerQ(+b.dataset.qans)});
+let wasOver=false;
+function updTimers(){
+  const q=role==='teacher'?T.quiz:S.quiz;if(!q||q.phase!=='q')return;
+  const left=Math.max(0,Math.ceil((q.t0+q.dur*1000-srvNow())/1000)),el=$(role==='teacher'?'#qvTimer':'#sqTimer');
+  if(el)el.textContent='⏱ '+left+' s';
+}
+setInterval(()=>{
+  if(role==='teacher'&&T.mode==='quiz'&&T.quiz&&T.quiz.phase==='q'){
+    if(srvNow()>=T.quiz.t0+T.quiz.dur*1000+2500)revealQ();else updTimers();
+  }
+  if(role==='student'&&S.mode==='quiz'&&S.quiz&&S.quiz.phase==='q'){
+    const over=srvNow()>S.quiz.t0+S.quiz.dur*1000;
+    if(over!==wasOver){wasOver=over;renderQuizStudent()}else updTimers();
+  }
+},500);
 
 /* ================= NO PASTE FOR STUDENTS ================= */
 (function(){
@@ -699,7 +857,7 @@ function setRole(r){
   if(role==='student'&&r==='teacher'&&myName)ch.postMessage({t:'leave',sid});
   role=r;sessionStorage.setItem('lw_role',r);
   $('#roleT').setAttribute('aria-pressed',r==='teacher');$('#roleS').setAttribute('aria-pressed',r==='student');
-  $('#teacher').classList.toggle('hidden',r!=='teacher');$('#student').classList.toggle('hidden',r!=='student');
+  $('#student').classList.toggle('hidden',r!=='student');showTView();
   if(r==='teacher'){renderT();applySplit();$('#roomCode').textContent=RM.code;startNet();push()}
   else{netStop();S.pages=[];S.view=0;shownPid=null;stRaw=null;stV=-1;renderS();RM.code=RM.code||localStorage.getItem('lw_room')||'';$('#roomCode').textContent=RM.code||'—';if(myName&&RM.code){ident();join()}else needName()}
 }
